@@ -174,13 +174,13 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
+  m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 10, y: 10}
+  m_Spacing: {x: 0, y: 0}
   m_Constraint: 1
-  m_ConstraintCount: 10
+  m_ConstraintCount: 1
 --- !u!114 &68853368
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1871,8 +1871,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8124c9e43a2f745e2851eb023fb8213b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  width: 10
-  height: 10
+  width: 9
+  height: 9
   cellPrefab: {fileID: 6988269069182093721, guid: 180da5e87d0bf4a87abb99b4033d80d2, type: 3}
   cellRoot: {fileID: 68853366}
 --- !u!4 &2021057399
