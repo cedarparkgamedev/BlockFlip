@@ -1,5 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class GridManager : MonoBehaviour
 {
@@ -8,6 +12,19 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int height = 10;
     [SerializeField] private PuzzleCell cellPrefab;
     [SerializeField] private Transform cellRoot;
+
+    [Header("Placement Animation")]
+    [SerializeField] private float flipAnimationDuration = 0.16f;
+    [SerializeField] private float flipPeakScale = 1.12f;
+    [SerializeField] private float rowClearHighlightDuration = 0.58f;
+    [SerializeField] private float rowClearPeakScale = 1.28f;
+    [SerializeField] private Color rowClearHighlightColor = new Color(1f, 0.88f, 0.2f, 1f);
+    [SerializeField] private int rowClearFlashCount = 3;
+    [SerializeField] private float rowClearHoldDuration = 0.08f;
+    [SerializeField] private float rowRegenerateDuration = 0.46f;
+    [SerializeField] private float rowRegenerateSlideDistance = 240f;
+    [SerializeField] private float rowRegeneratePeakScale = 1.08f;
+    [SerializeField] private float rowRegenerateStagger = 0.045f;
 
     private PuzzleCell[,] cells;
     private float cellSize;
@@ -114,20 +131,50 @@ public class GridManager : MonoBehaviour
         return clearedRows;
     }
 
+    public bool TryPlaceBlockAnimated(BlockShape shape, int originX, int originY, Action<int> onComplete)
+    {
+        if (!CanPlaceBlock(shape, originX, originY))
+            return false;
+
+        foreach (Vector2Int offset in shape.Cells)
+        {
+            int x = originX + offset.x;
+            int y = originY + offset.y;
+
+            cells[x, y].FlipAnimated(flipAnimationDuration, flipPeakScale);
+        }
+
+        List<int> completedRows = FindCompletedRows();
+        StartCoroutine(ResolvePlacementAnimation(completedRows, onComplete));
+        return true;
+    }
+
     private int ClearCompletedRows()
     {
         int clearCount = 0;
+
+        foreach (int y in FindCompletedRows())
+        {
+            clearCount++;
+            RegenerateRow(y);
+        }
+
+        return clearCount;
+    }
+
+    private List<int> FindCompletedRows()
+    {
+        List<int> completedRows = new List<int>();
 
         for (int y = 0; y < height; y++)
         {
             if (IsRowUniform(y))
             {
-                clearCount++;
-                RegenerateRow(y);
+                completedRows.Add(y);
             }
         }
 
-        return clearCount;
+        return completedRows;
     }
 
     private bool IsRowUniform(int y)
@@ -153,6 +200,72 @@ public class GridManager : MonoBehaviour
 
             cells[x, y].SetState(randomState);
         }
+    }
+
+    private IEnumerator ResolvePlacementAnimation(List<int> completedRows, Action<int> onComplete)
+    {
+        yield return new WaitForSeconds(flipAnimationDuration);
+
+        if (completedRows.Count > 0)
+        {
+            foreach (int y in completedRows)
+            {
+                PlayRowClearHighlight(y);
+            }
+
+            yield return new WaitForSeconds(rowClearHighlightDuration + rowClearHoldDuration);
+
+            for (int i = 0; i < completedRows.Count; i++)
+            {
+                int y = completedRows[i];
+                float slideDirection = i % 2 == 0 ? -1f : 1f;
+                RegenerateRowAnimated(y, slideDirection);
+            }
+
+            yield return new WaitForSeconds(GetRowRegenerateTotalDuration());
+        }
+
+        onComplete?.Invoke(completedRows.Count);
+    }
+
+    private void PlayRowClearHighlight(int y)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            cells[x, y].PlayClearHighlight(
+                rowClearHighlightDuration,
+                rowClearPeakScale,
+                rowClearHighlightColor,
+                rowClearFlashCount
+            );
+        }
+    }
+
+    private void RegenerateRowAnimated(int y, float slideDirection)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            CellState randomState = Random.value > 0.5f
+                ? CellState.White
+                : CellState.Black;
+
+            float delay = slideDirection < 0f
+                ? x * rowRegenerateStagger
+                : (width - 1 - x) * rowRegenerateStagger;
+
+            cells[x, y].RegenerateSlideAnimated(
+                randomState,
+                rowRegenerateDuration,
+                delay,
+                rowRegenerateSlideDistance * slideDirection,
+                rowRegeneratePeakScale
+            );
+        }
+    }
+
+    private float GetRowRegenerateTotalDuration()
+    {
+        return rowRegenerateDuration + Mathf.Max(0, width - 1) * rowRegenerateStagger;
     }
 
     public Vector2Int FindOverlappingCell(Vector2 screenPosition)

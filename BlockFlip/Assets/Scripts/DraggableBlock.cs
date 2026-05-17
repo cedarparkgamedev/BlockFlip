@@ -1,9 +1,12 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private float BlockPosYOffsetWhileDragging;
+    [SerializeField] private float dropReleaseDuration = 0.12f;
+    [SerializeField] private float dropReleaseScale = 0.72f;
 
     private BlockShape shape;
     private BlockTray tray;
@@ -62,7 +65,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
         if (resolver != null && resolver.TryPlaceBlock(this, eventData))
         {
-            tray.ReplaceBlock(this);
+            StartCoroutine(PlayDropRelease());
         }
         else
         {
@@ -70,6 +73,23 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             rectTransform.anchoredPosition = originalAnchoredPosition;
             blockVisual.Build(shape, trayTileSize);
         }
+    }
+
+    private IEnumerator PlayDropRelease()
+    {
+        Vector3 startScale = rectTransform.localScale;
+        Vector3 targetScale = startScale * dropReleaseScale;
+        float elapsed = 0f;
+
+        while (elapsed < dropReleaseDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / dropReleaseDuration);
+            rectTransform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            yield return null;
+        }
+
+        tray.ReplaceBlock(this);
     }
 
     private void SetDraggingPosition(PointerEventData eventData)

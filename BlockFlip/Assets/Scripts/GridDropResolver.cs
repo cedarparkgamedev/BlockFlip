@@ -16,16 +16,22 @@ public class GridDropResolver : MonoBehaviour
         if (!gridManager.CanPlaceBlock(block.Shape, origin.x, origin.y))
             return false;
 
-        int clearedRows = gridManager.PlaceBlock(block.Shape, origin.x, origin.y);
+        return gridManager.TryPlaceBlockAnimated(
+            block.Shape,
+            origin.x,
+            origin.y,
+            OnRowsCleared
+        );
+    }
 
+    private void OnRowsCleared(int clearedRows)
+    {
         if (clearedRows > 0)
         {
             Debug.Log($"Cleared Rows: {clearedRows}");
         }
-        
-        ScoreManager.instance.OnRowsCleared(clearedRows);
 
-        return true;
+        ScoreManager.instance.OnRowsCleared(clearedRows);
     }
 
     private bool TryFindBlockOrigin(DraggableBlock block, Camera camera, out Vector2Int origin)
