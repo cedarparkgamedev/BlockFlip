@@ -8,6 +8,8 @@ using Random = UnityEngine.Random;
 
 public class GridManager : MonoBehaviour
 {
+    private const string PlacementPreviewPrefsKey = "Settings_PlacementPreview";
+
     private class ClearResult
     {
         public readonly List<int> Rows = new List<int>();
@@ -158,7 +160,14 @@ public class GridManager : MonoBehaviour
         ConfigureText("Score_Value", 56f, false, textColor, null);
         ConfigureText("Combo_Value", 50f, false, textColor, null);
 
-        EnsureDangerHud();
+        if (GameSessionSettings.UsesDangerGauge)
+        {
+            EnsureDangerHud();
+        }
+        else
+        {
+            dangerManager = null;
+        }
     }
 
     private void ConfigureHudPanel(string objectName, Vector2 anchorMin, Vector2 anchorMax)
@@ -447,6 +456,9 @@ public class GridManager : MonoBehaviour
     public void ShowPlacementPreview(BlockShape shape, int originX, int originY)
     {
         ClearPlacementPreview();
+
+        if (PlayerPrefs.GetInt(PlacementPreviewPrefsKey, 1) == 0)
+            return;
 
         if (!CanPlaceBlock(shape, originX, originY))
             return;

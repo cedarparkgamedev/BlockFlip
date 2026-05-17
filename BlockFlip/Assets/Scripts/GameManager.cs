@@ -93,6 +93,15 @@ public class GameManager : MonoBehaviour
     private void InitializeSceneUi()
     {
         Application.targetFrameRate = targetFrameRate;
+
+        if (SceneManager.GetActiveScene().name == homeSceneName)
+        {
+            isGameOver = false;
+            isPaused = false;
+            Time.timeScale = 1f;
+            return;
+        }
+
         EnsurePauseButton();
         EnsurePauseMenu();
         EnsureGameOverMenu();
@@ -305,7 +314,11 @@ public class GameManager : MonoBehaviour
 
     private void OpenSettings()
     {
-        Debug.Log("Settings menu is not implemented yet.");
+        Canvas canvas = FindAnyObjectByType<Canvas>();
+        if (canvas != null)
+        {
+            SettingsMenuPresenter.Show(canvas.transform);
+        }
     }
 
     private void RestartGame()

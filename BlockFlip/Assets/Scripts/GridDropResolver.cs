@@ -51,7 +51,10 @@ public class GridDropResolver : MonoBehaviour
         }
 
         ScoreManager.instance.OnRowsCleared(clearedRows);
-        gridManager.DangerManager.OnMoveResolved(clearedRows);
+        if (GameSessionSettings.UsesDangerGauge && gridManager.DangerManager != null)
+        {
+            gridManager.DangerManager.OnMoveResolved(clearedRows);
+        }
     }
 
     private bool TryFindBlockOrigin(DraggableBlock block, Camera camera, out Vector2Int origin)
