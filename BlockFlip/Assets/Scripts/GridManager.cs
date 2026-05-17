@@ -51,7 +51,6 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Color slotColor = new Color(1f, 1f, 1f, 0.48f);
     [SerializeField] private Color textColor = new Color(0.045f, 0.045f, 0.045f, 1f);
     [SerializeField] private Color subtleTextColor = new Color(0.22f, 0.205f, 0.19f, 1f);
-    [SerializeField] private float panelShadowAlpha = 0.24f;
 
     private PuzzleCell[,] cells;
     private float cellSize;
@@ -145,7 +144,7 @@ public class GridManager : MonoBehaviour
 
         if (addShadow)
         {
-            AddShadow(panelObject, new Vector2(0f, -8f), panelShadowAlpha);
+            AddShadow(panelObject);
         }
     }
 
@@ -200,6 +199,8 @@ public class GridManager : MonoBehaviour
         textComponent.enableAutoSizing = true;
         textComponent.characterSpacing = labelStyle ? 12f : 2f;
         textComponent.alignment = TextAlignmentOptions.Center;
+
+        AddShadow(textObject);
     }
 
     private void EnsureDangerHud()
@@ -255,6 +256,8 @@ public class GridManager : MonoBehaviour
         textComponent.characterSpacing = labelStyle ? 12f : 2f;
         textComponent.alignment = TextAlignmentOptions.Center;
         textComponent.raycastTarget = false;
+
+        AddShadow(textObject);
     }
 
     private Image EnsureDangerBar(Transform parent)
@@ -274,7 +277,7 @@ public class GridManager : MonoBehaviour
         Image barImage = barObject.GetComponent<Image>();
         barImage.color = new Color(0.08f, 0.075f, 0.07f, 0.16f);
         barImage.raycastTarget = false;
-        AddShadow(barObject, new Vector2(0f, -3f), 0.18f);
+        AddShadow(barObject);
 
         Transform fillTransform = barObject.transform.Find("Danger_Fill");
         GameObject fillObject = fillTransform != null
@@ -291,6 +294,7 @@ public class GridManager : MonoBehaviour
         Image fillImage = fillObject.GetComponent<Image>();
         fillImage.color = new Color(0.08f, 0.075f, 0.07f, 0.86f);
         fillImage.raycastTarget = false;
+        AddShadow(fillObject);
 
         return fillImage;
     }
@@ -311,8 +315,8 @@ public class GridManager : MonoBehaviour
         }
 
         ConfigureSlot("BlockSlot0", new Color(1f, 1f, 1f, 0.72f), true);
-        ConfigureSlot("BlockSlot1", slotColor, false);
-        ConfigureSlot("BlockSlot2", slotColor, false);
+        ConfigureSlot("BlockSlot1", slotColor, true);
+        ConfigureSlot("BlockSlot2", slotColor, true);
     }
 
     private void ConfigureSlot(string objectName, Color color, bool addStrongShadow)
@@ -329,7 +333,7 @@ public class GridManager : MonoBehaviour
             slotImage.raycastTarget = false;
         }
 
-        AddShadow(slotObject, new Vector2(0f, addStrongShadow ? -7f : -3f), addStrongShadow ? 0.2f : 0.1f);
+        AddShadow(slotObject);
     }
 
     private void ConfigureGrid()
@@ -342,17 +346,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void AddShadow(GameObject target, Vector2 distance, float alpha)
+    private void AddShadow(GameObject target)
     {
-        Shadow shadow = target.GetComponent<Shadow>();
-        if (shadow == null)
-        {
-            shadow = target.AddComponent<Shadow>();
-        }
-
-        shadow.effectColor = new Color(0f, 0f, 0f, alpha);
-        shadow.effectDistance = distance;
-        shadow.useGraphicAlpha = true;
+        GameManager.ApplyShadow(target);
     }
 
     private void CreateGrid()

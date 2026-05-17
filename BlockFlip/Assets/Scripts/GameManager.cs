@@ -21,6 +21,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameOverMenuView gameOverMenuPrefab;
     [SerializeField] private string bestScorePrefsKey = "BestScore";
 
+    [Header("Shadow Style")]
+    [SerializeField] private Color shadowEffectColor = new Color(0f, 0f, 0f, 0.3f);
+    [SerializeField] private Vector2 shadowEffectDistance = new Vector2(0f, -6f);
+    [SerializeField] private bool shadowUseGraphicAlpha = true;
+
     private PauseMenuView pauseMenu;
     private GameOverMenuView gameOverMenu;
     private Coroutine initializeSceneUiCoroutine;
@@ -29,15 +34,6 @@ public class GameManager : MonoBehaviour
     private static Sprite circleButtonSprite;
 
     public bool IsPaused => isPaused;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void EnsureInstance()
-    {
-        if (FindAnyObjectByType<GameManager>() != null)
-            return;
-
-        new GameObject("GameManager").AddComponent<GameManager>();
-    }
 
     private void Awake()
     {
@@ -206,7 +202,7 @@ public class GameManager : MonoBehaviour
         buttonImage.type = Image.Type.Sliced;
         buttonImage.color = pauseButtonColor;
         buttonImage.raycastTarget = true;
-        AddShadow(buttonObject, new Vector2(0f, -7f), 0.22f);
+        ApplyShadow(buttonObject);
 
         Button pauseButton = buttonObject.GetComponent<Button>();
         pauseButton.targetGraphic = buttonImage;
@@ -273,6 +269,7 @@ public class GameManager : MonoBehaviour
             pauseMenu.name = "PauseMenu";
         }
 
+        ApplyShadowStyleToHierarchy(pauseMenu.gameObject);
         pauseMenu.transform.SetAsLastSibling();
         pauseMenu.Initialize(ResumeGame, RestartGame, OpenSettings, ReturnToHome);
     }
@@ -300,6 +297,7 @@ public class GameManager : MonoBehaviour
             gameOverMenu.name = "GameOverMenu";
         }
 
+        ApplyShadowStyleToHierarchy(gameOverMenu.gameObject);
         gameOverMenu.transform.SetAsLastSibling();
         gameOverMenu.Initialize(RestartGame, ReturnToHome);
         gameOverMenu.Hide();
@@ -333,17 +331,49 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(0);
     }
 
-    private static void AddShadow(GameObject target, Vector2 distance, float alpha)
+    public static Shadow ApplyShadow(GameObject target)
     {
+        if (target == null)
+            return null;
+
         Shadow shadow = target.GetComponent<Shadow>();
         if (shadow == null)
         {
             shadow = target.AddComponent<Shadow>();
         }
 
-        shadow.effectColor = new Color(0f, 0f, 0f, alpha);
-        shadow.effectDistance = distance;
+        ApplyShadow(shadow);
+        return shadow;
+    }
+
+    public static void ApplyShadow(Shadow shadow)
+    {
+        if (shadow == null)
+            return;
+
+        if (Instance != null)
+        {
+            shadow.effectColor = Instance.shadowEffectColor;
+            shadow.effectDistance = Instance.shadowEffectDistance;
+            shadow.useGraphicAlpha = Instance.shadowUseGraphicAlpha;
+            return;
+        }
+
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.3f);
+        shadow.effectDistance = new Vector2(0f, -6f);
         shadow.useGraphicAlpha = true;
+    }
+
+    public static void ApplyShadowStyleToHierarchy(GameObject root)
+    {
+        if (root == null)
+            return;
+
+        Shadow[] shadows = root.GetComponentsInChildren<Shadow>(true);
+        foreach (Shadow shadow in shadows)
+        {
+            ApplyShadow(shadow);
+        }
     }
 
     private static Sprite GetCircleButtonSprite()

@@ -131,15 +131,7 @@ public class BlockVisual : MonoBehaviour
             image.color = blockTileColor;
         }
 
-        Shadow shadow = tile.GetComponent<Shadow>();
-        if (shadow == null)
-        {
-            shadow = tile.gameObject.AddComponent<Shadow>();
-        }
-
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.32f);
-        shadow.effectDistance = new Vector2(3f, -4f);
-        shadow.useGraphicAlpha = true;
+        GameManager.ApplyShadow(tile.gameObject);
     }
 
     public bool TryGetCellScreenPosition(Vector2Int shapeCell, Camera camera, out Vector2 screenPosition)

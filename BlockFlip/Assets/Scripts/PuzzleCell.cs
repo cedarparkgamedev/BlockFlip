@@ -24,6 +24,7 @@ public class PuzzleCell : MonoBehaviour
     private Image clearGlowImage;
     private Coroutine animationRoutine;
     private Vector3 originalScale;
+    private Quaternion originalRotation;
     private bool isPreviewing;
 
     public int X { get; private set; }
@@ -67,6 +68,8 @@ public class PuzzleCell : MonoBehaviour
         {
             image.color = GetColor(state);
         }
+
+        ResetTransformVisuals();
     }
 
     public void SetStateAnimated(CellState state, float duration, float peakScale)
@@ -201,7 +204,7 @@ public class PuzzleCell : MonoBehaviour
 
         SetGlow(previewGlowImage, glowColor, glowAlpha, previewScale);
         SetOverlay(innerTintImage, useSolidPreviewColor ? clearInnerTintColor : previewInnerTintColor, 1f, 1f);
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
     }
 
     public void ClearPreview()
@@ -220,26 +223,33 @@ public class PuzzleCell : MonoBehaviour
         SetGlow(previewGlowImage, Color.clear, 0f, 1f);
         SetGlow(clearGlowImage, Color.clear, 0f, 1f);
 
-        if (rectTransform != null)
-        {
-            rectTransform.localScale = originalScale;
-        }
+        ResetTransformVisuals();
     }
 
     private IEnumerator AnimateStateChange(Color targetColor, float duration, float peakScale)
     {
-        Color startColor = image != null ? image.color : targetColor;
         float elapsed = 0f;
+        float safeDuration = Mathf.Max(0.01f, duration);
+        bool colorChanged = false;
 
-        while (elapsed < duration)
+        while (elapsed < safeDuration)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
+            float t = Mathf.Clamp01(elapsed / safeDuration);
             float scaleT = Mathf.Sin(t * Mathf.PI);
+            float foldT = t < 0.5f
+                ? t / 0.5f
+                : (1f - t) / 0.5f;
+            float rotationY = Mathf.Lerp(0f, 90f, foldT);
 
-            if (image != null)
+            if (!colorChanged && t >= 0.5f)
             {
-                image.color = Color.Lerp(startColor, targetColor, t);
+                if (image != null)
+                {
+                    image.color = targetColor;
+                }
+
+                colorChanged = true;
             }
 
             rectTransform.localScale = Vector3.Lerp(
@@ -247,6 +257,7 @@ public class PuzzleCell : MonoBehaviour
                 originalScale * peakScale,
                 scaleT
             );
+            rectTransform.localRotation = originalRotation * Quaternion.Euler(0f, rotationY, 0f);
 
             yield return null;
         }
@@ -256,7 +267,7 @@ public class PuzzleCell : MonoBehaviour
             image.color = targetColor;
         }
 
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
         animationRoutine = null;
     }
 
@@ -279,7 +290,7 @@ public class PuzzleCell : MonoBehaviour
             yield return null;
         }
 
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
         animationRoutine = null;
     }
 
@@ -309,7 +320,7 @@ public class PuzzleCell : MonoBehaviour
 
         SetOverlay(innerTintImage, Color.clear, 0f, 1f);
         SetGlow(clearGlowImage, Color.clear, 0f, 1f);
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
         animationRoutine = null;
     }
 
@@ -330,6 +341,7 @@ public class PuzzleCell : MonoBehaviour
             image.color = new Color(targetColor.r, targetColor.g, targetColor.b, 0f);
         }
 
+        rectTransform.localRotation = originalRotation;
         rectTransform.localScale = originalScale * startScale;
 
         float elapsed = 0f;
@@ -363,7 +375,7 @@ public class PuzzleCell : MonoBehaviour
             image.color = targetColor;
         }
 
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
         animationRoutine = null;
     }
 
@@ -383,6 +395,7 @@ public class PuzzleCell : MonoBehaviour
         Vector2 startPosition = targetPosition + slideOffset;
 
         rectTransform.anchoredPosition = startPosition;
+        rectTransform.localRotation = originalRotation;
         rectTransform.localScale = originalScale;
 
         if (image != null)
@@ -418,7 +431,7 @@ public class PuzzleCell : MonoBehaviour
         }
 
         rectTransform.anchoredPosition = targetPosition;
-        rectTransform.localScale = originalScale;
+        ResetTransformVisuals();
 
         if (image != null)
         {
@@ -435,6 +448,16 @@ public class PuzzleCell : MonoBehaviour
 
         rectTransform = GetComponent<RectTransform>();
         originalScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+        originalRotation = rectTransform != null ? rectTransform.localRotation : Quaternion.identity;
+    }
+
+    private void ResetTransformVisuals()
+    {
+        if (rectTransform == null)
+            return;
+
+        rectTransform.localScale = originalScale;
+        rectTransform.localRotation = originalRotation;
     }
 
     private Color GetColor(CellState state)
@@ -457,15 +480,7 @@ public class PuzzleCell : MonoBehaviour
         SetGlow(previewGlowImage, Color.clear, 0f, 1f);
         SetGlow(clearGlowImage, Color.clear, 0f, 1f);
 
-        Shadow shadow = GetComponent<Shadow>();
-        if (shadow == null)
-        {
-            shadow = gameObject.AddComponent<Shadow>();
-        }
-
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.34f);
-        shadow.effectDistance = new Vector2(2f, -3f);
-        shadow.useGraphicAlpha = true;
+        GameManager.ApplyShadow(gameObject);
     }
 
     private Image EnsureOverlayImage(string objectName, float scale, bool fillCenter)

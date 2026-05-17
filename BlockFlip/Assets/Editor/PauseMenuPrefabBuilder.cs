@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public static class PauseMenuPrefabBuilder
 {
     private const string PrefabPath = "Assets/Prefabs/PauseMenu.prefab";
+    private static readonly Color ShadowEffectColor = new Color(0f, 0f, 0f, 0.3f);
+    private static readonly Vector2 ShadowEffectDistance = new Vector2(0f, -6f);
+    private const bool ShadowUseGraphicAlpha = true;
 
     [MenuItem("Tools/BlockFlip/Rebuild Pause Menu Prefab")]
     public static void Rebuild()
@@ -21,7 +24,7 @@ public static class PauseMenuPrefabBuilder
         Image panelImage = panel.AddComponent<Image>();
         panelImage.color = new Color(1f, 0.985f, 0.955f, 0.97f);
         panelImage.raycastTarget = true;
-        AddShadow(panel, new Vector2(0f, -14f), 0.22f);
+        AddShadow(panel);
 
         CreateLabel("Title", panel.transform, "P A U S E D", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(520f, 80f), new Vector2(0f, 350f), 44f, 8f, new Color(0.05f, 0.05f, 0.048f, 1f));
         CreatePauseMedallion(panel.transform);
@@ -73,7 +76,7 @@ public static class PauseMenuPrefabBuilder
         Image image = circle.AddComponent<Image>();
         image.color = new Color(1f, 0.985f, 0.955f, 0.95f);
         image.raycastTarget = false;
-        AddShadow(circle, new Vector2(0f, -8f), 0.2f);
+        AddShadow(circle);
 
         CreateIconBar(circle.transform, "PauseBarLeft", new Vector2(-14f, 0f));
         CreateIconBar(circle.transform, "PauseBarRight", new Vector2(14f, 0f));
@@ -95,7 +98,7 @@ public static class PauseMenuPrefabBuilder
             ? new Color(1f, 1f, 1f, 0.9f)
             : new Color(1f, 0.985f, 0.955f, 0.62f);
         image.raycastTarget = true;
-        AddShadow(buttonObject, new Vector2(0f, emphasized ? -8f : -4f), emphasized ? 0.18f : 0.1f);
+        AddShadow(buttonObject);
 
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
@@ -138,11 +141,11 @@ public static class PauseMenuPrefabBuilder
         return label;
     }
 
-    private static void AddShadow(GameObject target, Vector2 distance, float alpha)
+    private static void AddShadow(GameObject target)
     {
         Shadow shadow = target.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0f, 0f, 0f, alpha);
-        shadow.effectDistance = distance;
-        shadow.useGraphicAlpha = true;
+        shadow.effectColor = ShadowEffectColor;
+        shadow.effectDistance = ShadowEffectDistance;
+        shadow.useGraphicAlpha = ShadowUseGraphicAlpha;
     }
 }
