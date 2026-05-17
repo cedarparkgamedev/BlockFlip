@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
 {
     [SerializeField] private float BlockPosYOffsetWhileDragging;
     [SerializeField] private float dropReleaseDuration = 0.12f;
@@ -75,6 +75,15 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             rectTransform.anchoredPosition = originalAnchoredPosition;
             blockVisual.Build(shape, trayTileSize);
         }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (transform.parent != originalParent && originalParent != null)
+            return;
+
+        shape = shape.Rotated90();
+        blockVisual.Build(shape, trayTileSize);
     }
 
     private IEnumerator PlayDropRelease()
