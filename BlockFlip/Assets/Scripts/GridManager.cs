@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
@@ -43,6 +44,15 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Color clearPreviewColor = new Color(1f, 0.86f, 0.15f, 0.72f);
     [SerializeField] private float clearPreviewScale = 1.16f;
 
+    [Header("Visual Theme")]
+    [SerializeField] private bool applyReferenceStyle = true;
+    [SerializeField] private Color backgroundColor = new Color(0.93f, 0.915f, 0.89f, 1f);
+    [SerializeField] private Color panelColor = new Color(1f, 0.985f, 0.955f, 0.78f);
+    [SerializeField] private Color slotColor = new Color(1f, 1f, 1f, 0.48f);
+    [SerializeField] private Color textColor = new Color(0.045f, 0.045f, 0.045f, 1f);
+    [SerializeField] private Color subtleTextColor = new Color(0.22f, 0.205f, 0.19f, 1f);
+    [SerializeField] private float panelShadowAlpha = 0.24f;
+
     private PuzzleCell[,] cells;
     private float cellSize;
     private readonly List<PuzzleCell> previewCells = new List<PuzzleCell>();
@@ -53,7 +63,268 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
+        ApplyReferenceStyle();
         CreateGrid();
+    }
+
+    private void ApplyReferenceStyle()
+    {
+        if (!applyReferenceStyle)
+            return;
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            mainCamera.backgroundColor = backgroundColor;
+        }
+
+        Canvas canvas = FindAnyObjectByType<Canvas>();
+        if (canvas != null)
+        {
+            EnsureBackground(canvas.transform);
+        }
+
+        ConfigurePanel("TopHUD", new Vector2(0f, 0.86f), new Vector2(1f, 1f), Color.clear, false);
+        ConfigurePanel("GridRoot", new Vector2(0.075f, 0.315f), new Vector2(0.925f, 0.845f), Color.clear, false);
+        ConfigurePanel("BlockTray", new Vector2(0.075f, 0.135f), new Vector2(0.925f, 0.29f), panelColor, true);
+        ConfigurePanel("Controls", new Vector2(0f, 0f), new Vector2(1f, 0.12f), Color.clear, false);
+
+        ConfigureTopHud();
+        ConfigureTray();
+        ConfigureGrid();
+    }
+
+    private void EnsureBackground(Transform canvasTransform)
+    {
+        Transform existing = canvasTransform.Find("SoftBackground");
+        GameObject backgroundObject = existing != null
+            ? existing.gameObject
+            : new GameObject("SoftBackground", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+
+        backgroundObject.transform.SetParent(canvasTransform, false);
+        backgroundObject.transform.SetAsFirstSibling();
+
+        RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
+        backgroundRect.anchorMin = Vector2.zero;
+        backgroundRect.anchorMax = Vector2.one;
+        backgroundRect.offsetMin = Vector2.zero;
+        backgroundRect.offsetMax = Vector2.zero;
+        backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+
+        Image backgroundImage = backgroundObject.GetComponent<Image>();
+        backgroundImage.color = backgroundColor;
+        backgroundImage.raycastTarget = false;
+    }
+
+    private void ConfigurePanel(string objectName, Vector2 anchorMin, Vector2 anchorMax, Color color, bool addShadow)
+    {
+        GameObject panelObject = GameObject.Find(objectName);
+        if (panelObject == null)
+            return;
+
+        RectTransform panelRect = panelObject.GetComponent<RectTransform>();
+        if (panelRect != null)
+        {
+            panelRect.anchorMin = anchorMin;
+            panelRect.anchorMax = anchorMax;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            panelRect.anchoredPosition = Vector2.zero;
+        }
+
+        Image panelImage = panelObject.GetComponent<Image>();
+        if (panelImage != null)
+        {
+            panelImage.enabled = color.a > 0f;
+            panelImage.color = color;
+            panelImage.raycastTarget = false;
+        }
+
+        if (addShadow)
+        {
+            AddShadow(panelObject, new Vector2(0f, -8f), panelShadowAlpha);
+        }
+    }
+
+    private void ConfigureTopHud()
+    {
+        ConfigureHudPanel("ScorePanel", new Vector2(0.18f, 0.14f), new Vector2(0.43f, 0.9f));
+        ConfigureHudPanel("ComboPanel", new Vector2(0.47f, 0.14f), new Vector2(0.64f, 0.9f));
+
+        ConfigureText("Score_Label", 28f, true, subtleTextColor, "SCORE");
+        ConfigureText("Combo_Label", 28f, true, subtleTextColor, "COMBO");
+        ConfigureText("Score_Value", 56f, false, textColor, null);
+        ConfigureText("Combo_Value", 50f, false, textColor, null);
+
+        EnsureDangerHud();
+    }
+
+    private void ConfigureHudPanel(string objectName, Vector2 anchorMin, Vector2 anchorMax)
+    {
+        GameObject panelObject = GameObject.Find(objectName);
+        if (panelObject == null)
+            return;
+
+        RectTransform rectTransform = panelObject.GetComponent<RectTransform>();
+        if (rectTransform == null)
+            return;
+
+        rectTransform.anchorMin = anchorMin;
+        rectTransform.anchorMax = anchorMax;
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+    }
+
+    private void ConfigureText(string objectName, float fontSize, bool labelStyle, Color color, string text)
+    {
+        GameObject textObject = GameObject.Find(objectName);
+        if (textObject == null)
+            return;
+
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        if (textComponent == null)
+            return;
+
+        if (!string.IsNullOrEmpty(text))
+        {
+            textComponent.text = text;
+        }
+
+        textComponent.color = color;
+        textComponent.fontSize = fontSize;
+        textComponent.fontSizeMax = fontSize;
+        textComponent.fontSizeMin = Mathf.Max(12f, fontSize * 0.55f);
+        textComponent.enableAutoSizing = true;
+        textComponent.characterSpacing = labelStyle ? 12f : 2f;
+        textComponent.alignment = TextAlignmentOptions.Center;
+    }
+
+    private void EnsureDangerHud()
+    {
+        GameObject topHud = GameObject.Find("TopHUD");
+        if (topHud == null)
+            return;
+
+        Transform existing = topHud.transform.Find("DangerPanel");
+        GameObject dangerPanel = existing != null
+            ? existing.gameObject
+            : new GameObject("DangerPanel", typeof(RectTransform));
+
+        dangerPanel.transform.SetParent(topHud.transform, false);
+        RectTransform panelRect = dangerPanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.68f, 0.16f);
+        panelRect.anchorMax = new Vector2(0.95f, 0.9f);
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+
+        EnsureHudText(dangerPanel.transform, "Danger_Label", "DANGER", new Vector2(0f, 0.55f), new Vector2(1f, 1f), 28f, true);
+        EnsureDangerBar(dangerPanel.transform);
+    }
+
+    private void EnsureHudText(Transform parent, string name, string text, Vector2 anchorMin, Vector2 anchorMax, float fontSize, bool labelStyle)
+    {
+        Transform existing = parent.Find(name);
+        GameObject textObject = existing != null
+            ? existing.gameObject
+            : new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+
+        textObject.transform.SetParent(parent, false);
+        RectTransform rectTransform = textObject.GetComponent<RectTransform>();
+        rectTransform.anchorMin = anchorMin;
+        rectTransform.anchorMax = anchorMax;
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI textComponent = textObject.GetComponent<TextMeshProUGUI>();
+        textComponent.text = text;
+        textComponent.color = subtleTextColor;
+        textComponent.fontSize = fontSize;
+        textComponent.fontSizeMax = fontSize;
+        textComponent.fontSizeMin = Mathf.Max(12f, fontSize * 0.55f);
+        textComponent.enableAutoSizing = true;
+        textComponent.characterSpacing = labelStyle ? 12f : 2f;
+        textComponent.alignment = TextAlignmentOptions.Center;
+        textComponent.raycastTarget = false;
+    }
+
+    private void EnsureDangerBar(Transform parent)
+    {
+        Transform existing = parent.Find("Danger_Bar");
+        GameObject barObject = existing != null
+            ? existing.gameObject
+            : new GameObject("Danger_Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+
+        barObject.transform.SetParent(parent, false);
+        RectTransform barRect = barObject.GetComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0f, 0.16f);
+        barRect.anchorMax = new Vector2(1f, 0.44f);
+        barRect.offsetMin = Vector2.zero;
+        barRect.offsetMax = Vector2.zero;
+
+        Image barImage = barObject.GetComponent<Image>();
+        barImage.color = new Color(0.08f, 0.075f, 0.07f, 0.82f);
+        barImage.raycastTarget = false;
+        AddShadow(barObject, new Vector2(0f, -3f), 0.18f);
+    }
+
+    private void ConfigureTray()
+    {
+        GameObject trayObject = GameObject.Find("BlockTray");
+        if (trayObject == null)
+            return;
+
+        GridLayoutGroup trayLayout = trayObject.GetComponent<GridLayoutGroup>();
+        if (trayLayout != null)
+        {
+            trayLayout.padding = new RectOffset(26, 26, 20, 20);
+            trayLayout.spacing = new Vector2(18f, 0f);
+            trayLayout.childAlignment = TextAnchor.MiddleCenter;
+            trayLayout.cellSize = new Vector2(280f, 220f);
+        }
+
+        ConfigureSlot("BlockSlot0", new Color(1f, 1f, 1f, 0.72f), true);
+        ConfigureSlot("BlockSlot1", slotColor, false);
+        ConfigureSlot("BlockSlot2", slotColor, false);
+    }
+
+    private void ConfigureSlot(string objectName, Color color, bool addStrongShadow)
+    {
+        GameObject slotObject = GameObject.Find(objectName);
+        if (slotObject == null)
+            return;
+
+        Image slotImage = slotObject.GetComponent<Image>();
+        if (slotImage != null)
+        {
+            slotImage.enabled = true;
+            slotImage.color = color;
+            slotImage.raycastTarget = false;
+        }
+
+        AddShadow(slotObject, new Vector2(0f, addStrongShadow ? -7f : -3f), addStrongShadow ? 0.2f : 0.1f);
+    }
+
+    private void ConfigureGrid()
+    {
+        GridLayoutGroup gridLayout = cellRoot.GetComponent<GridLayoutGroup>();
+        if (gridLayout != null)
+        {
+            gridLayout.spacing = new Vector2(4f, 4f);
+            gridLayout.childAlignment = TextAnchor.MiddleCenter;
+        }
+    }
+
+    private void AddShadow(GameObject target, Vector2 distance, float alpha)
+    {
+        Shadow shadow = target.GetComponent<Shadow>();
+        if (shadow == null)
+        {
+            shadow = target.AddComponent<Shadow>();
+        }
+
+        shadow.effectColor = new Color(0f, 0f, 0f, alpha);
+        shadow.effectDistance = distance;
+        shadow.useGraphicAlpha = true;
     }
 
     private void CreateGrid()

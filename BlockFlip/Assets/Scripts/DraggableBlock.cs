@@ -8,6 +8,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     [SerializeField] private float BlockPosYOffsetWhileDragging;
     [SerializeField] private float dropReleaseDuration = 0.12f;
     [SerializeField] private float dropReleaseScale = 0.72f;
+    [SerializeField] private float trayBlockPadding = 26f;
 
     [Header("Preview")]
     [SerializeField, Min(0f)] private float previewDelay = 1.25f;
@@ -19,6 +20,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     private RectTransform rectTransform;
     private Canvas canvas;
     private float trayTileSize;
+    private float trayMaxTileSize;
 
     private Vector2 originalAnchoredPosition;
     private Transform originalParent;
@@ -41,12 +43,13 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         blockVisual = GetComponent<BlockVisual>();
         canvas = GetComponentInParent<Canvas>();
         trayTileSize = blockVisual.TileSize;
+        trayMaxTileSize = trayTileSize;
         ConfigureDragHitArea();
 
         // TODO:
         // 여기서 shape.Cells를 기반으로 작은 UI 타일들을 생성해서 블록 모양 표시
 
-        blockVisual.Build(blockShape);
+        BuildTrayVisual();
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -96,7 +99,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         {
             transform.SetParent(originalParent, true);
             rectTransform.anchoredPosition = originalAnchoredPosition;
-            blockVisual.Build(shape, trayTileSize);
+            BuildTrayVisual();
         }
     }
 
@@ -119,7 +122,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             return;
 
         shape = shape.Rotated90();
-        blockVisual.Build(shape, trayTileSize);
+        BuildTrayVisual();
     }
 
     private IEnumerator PlayDropRelease()
@@ -160,6 +163,16 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         }
 
         isPreviewVisible = false;
+    }
+
+    private void BuildTrayVisual()
+    {
+        Vector2 availableSize = rectTransform != null && rectTransform.rect.size.sqrMagnitude > 1f
+            ? rectTransform.rect.size
+            : new Vector2(trayMaxTileSize * 3f, trayMaxTileSize * 3f);
+
+        blockVisual.BuildToFit(shape, availableSize, trayBlockPadding, trayMaxTileSize);
+        trayTileSize = blockVisual.TileSize;
     }
 
     private void SetDraggingPosition(PointerEventData eventData)

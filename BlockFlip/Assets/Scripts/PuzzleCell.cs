@@ -11,6 +11,8 @@ public enum CellState
 public class PuzzleCell : MonoBehaviour
 {
     [SerializeField] private Image image;
+    [SerializeField] private Color whiteTileColor = new Color(0.94f, 0.925f, 0.9f, 1f);
+    [SerializeField] private Color blackTileColor = new Color(0.045f, 0.045f, 0.042f, 1f);
 
     private RectTransform rectTransform;
     private Coroutine animationRoutine;
@@ -25,6 +27,7 @@ public class PuzzleCell : MonoBehaviour
     public void Initialize(int x, int y, CellState initialState)
     {
         CacheRectTransform();
+        ConfigureVisualEffects();
 
         X = x;
         Y = y;
@@ -426,7 +429,25 @@ public class PuzzleCell : MonoBehaviour
     private Color GetColor(CellState state)
     {
         return state == CellState.White
-            ? Color.white
-            : Color.black;
+            ? whiteTileColor
+            : blackTileColor;
+    }
+
+    private void ConfigureVisualEffects()
+    {
+        if (image == null)
+            return;
+
+        image.raycastTarget = false;
+
+        Shadow shadow = GetComponent<Shadow>();
+        if (shadow == null)
+        {
+            shadow = gameObject.AddComponent<Shadow>();
+        }
+
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.34f);
+        shadow.effectDistance = new Vector2(2f, -3f);
+        shadow.useGraphicAlpha = true;
     }
 }
