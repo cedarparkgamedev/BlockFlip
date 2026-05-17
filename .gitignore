@@ -104,3 +104,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+/BlockFlip/iOSBuild
+/BlockFlip/.DS_Store
+/.DS_Store

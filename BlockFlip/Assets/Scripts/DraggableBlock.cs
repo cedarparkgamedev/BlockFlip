@@ -34,6 +34,14 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     public BlockShape Shape => shape;
     public BlockVisual Visual => blockVisual;
 
+    public void RefreshTrayVisual()
+    {
+        if (shape == null || blockVisual == null)
+            return;
+
+        BuildTrayVisual();
+    }
+
     public void Initialize(BlockShape blockShape, BlockTray ownerTray)
     {
         shape = blockShape;

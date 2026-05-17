@@ -65,6 +65,8 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
+        Application.targetFrameRate = -1;
+
         ApplyReferenceStyle();
         CreateGrid();
     }
