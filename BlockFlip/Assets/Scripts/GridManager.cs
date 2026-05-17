@@ -951,8 +951,6 @@ public class GridManager : MonoBehaviour
 
                 Rect rect = cellRect.rect;
 
-                Debug.Log("rect : "+rect.width+" / "+rect.height);
-
                 float normalizedX = (localPoint.x - rect.xMin) / rect.width;
                 float normalizedY = (localPoint.y - rect.yMin) / rect.height;
 

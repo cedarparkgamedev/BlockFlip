@@ -7,7 +7,7 @@ public class DangerManager : MonoBehaviour
     [SerializeField] private Image fillImage;
 
     private int danger;
-    private bool gameOverNotified;
+    private bool gameOverNotified = false;
 
     public bool IsGameOver => danger >= maxDanger;
 
@@ -28,12 +28,6 @@ public class DangerManager : MonoBehaviour
         }
 
         UpdateUI();
-
-        if (IsGameOver && !gameOverNotified)
-        {
-            gameOverNotified = true;
-            GameManager.Instance?.ShowGameOver();
-        }
     }
 
     public void OnMoveResolved(int clearedRows)
@@ -47,6 +41,8 @@ public class DangerManager : MonoBehaviour
             danger++;
         }
 
+        Debug.Log("[OnMoveResolved] danger "+danger+" maxDanger : "+maxDanger);
+
         UpdateUI();
     }
 
@@ -55,6 +51,14 @@ public class DangerManager : MonoBehaviour
         if (fillImage != null)
         {
             fillImage.fillAmount = danger / (float)maxDanger;
+            Debug.Log("New Fill Amount : "+fillImage.fillAmount);
         }
+
+        if (IsGameOver && !gameOverNotified)
+        {
+            Debug.Log("Game Over!");
+            gameOverNotified = true;
+            GameManager.Instance?.ShowGameOver();
+        }        
     }
 }
