@@ -98,6 +98,22 @@ public class PuzzleCell : MonoBehaviour
         float slideOffset,
         float peakScale)
     {
+        RegenerateSlideAnimated(
+            state,
+            duration,
+            delay,
+            Vector2.right * slideOffset,
+            peakScale
+        );
+    }
+
+    public void RegenerateSlideAnimated(
+        CellState state,
+        float duration,
+        float delay,
+        Vector2 slideOffset,
+        float peakScale)
+    {
         CacheRectTransform();
         State = state;
 
@@ -295,7 +311,7 @@ public class PuzzleCell : MonoBehaviour
         Color targetColor,
         float duration,
         float delay,
-        float slideOffset,
+        Vector2 slideOffset,
         float peakScale)
     {
         if (delay > 0f)
@@ -304,7 +320,7 @@ public class PuzzleCell : MonoBehaviour
         }
 
         Vector2 targetPosition = rectTransform.anchoredPosition;
-        Vector2 startPosition = targetPosition + Vector2.right * slideOffset;
+        Vector2 startPosition = targetPosition + slideOffset;
 
         rectTransform.anchoredPosition = startPosition;
         rectTransform.localScale = originalScale;

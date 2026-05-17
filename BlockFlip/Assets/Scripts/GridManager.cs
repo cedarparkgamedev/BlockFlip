@@ -7,6 +7,15 @@ using Random = UnityEngine.Random;
 
 public class GridManager : MonoBehaviour
 {
+    private class ClearResult
+    {
+        public readonly List<int> Rows = new List<int>();
+        public readonly List<int> Columns = new List<int>();
+        public readonly HashSet<Vector2Int> Cells = new HashSet<Vector2Int>();
+
+        public int LineCount => Rows.Count + Columns.Count;
+    }
+
     [Header("Grid")]
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
@@ -66,6 +75,8 @@ public class GridManager : MonoBehaviour
                 cells[x, y] = cell;
             }
         }
+
+        PreventStartingCompletedLines();
     }
 
     private void ConfigureGridLayout(GridLayoutGroup gridLayoutGroup)
@@ -125,8 +136,8 @@ public class GridManager : MonoBehaviour
             cells[x, y].Flip();
         }
 
-        int clearedRows = ClearCompletedRows();
-        return clearedRows;
+        int clearedLines = ClearCompletedLines();
+        return clearedLines;
     }
 
     public bool TryPlaceBlockAnimated(BlockShape shape, int originX, int originY, Action<int> onComplete)
@@ -142,37 +153,56 @@ public class GridManager : MonoBehaviour
             cells[x, y].FlipAnimated(flipAnimationDuration, flipPeakScale);
         }
 
-        List<int> completedRows = FindCompletedRows();
-        StartCoroutine(ResolvePlacementAnimation(completedRows, onComplete));
+        ClearResult clearResult = FindCompletedLines();
+        StartCoroutine(ResolvePlacementAnimation(clearResult, onComplete));
         return true;
     }
 
-    private int ClearCompletedRows()
+    private int ClearCompletedLines()
     {
-        int clearCount = 0;
+        ClearResult clearResult = FindCompletedLines();
 
-        foreach (int y in FindCompletedRows())
+        Dictionary<Vector2Int, CellState> newStates = CreateReplacementStates(clearResult);
+        foreach (KeyValuePair<Vector2Int, CellState> replacementState in newStates)
         {
-            clearCount++;
-            RegenerateRow(y);
+            Vector2Int cellPosition = replacementState.Key;
+            cells[cellPosition.x, cellPosition.y].SetState(replacementState.Value);
         }
 
-        return clearCount;
+        return clearResult.LineCount;
     }
 
-    private List<int> FindCompletedRows()
+    private ClearResult FindCompletedLines()
     {
-        List<int> completedRows = new List<int>();
+        ClearResult clearResult = new ClearResult();
 
         for (int y = 0; y < height; y++)
         {
             if (IsRowUniform(y))
             {
-                completedRows.Add(y);
+                clearResult.Rows.Add(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    clearResult.Cells.Add(new Vector2Int(x, y));
+                }
             }
         }
 
-        return completedRows;
+        for (int x = 0; x < width; x++)
+        {
+            if (IsColumnUniform(x))
+            {
+                clearResult.Columns.Add(x);
+
+                for (int y = 0; y < height; y++)
+                {
+                    clearResult.Cells.Add(new Vector2Int(x, y));
+                }
+            }
+        }
+
+        return clearResult;
     }
 
     private bool IsRowUniform(int y)
@@ -188,78 +218,295 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-    private void RegenerateRow(int y)
+    private bool IsColumnUniform(int x)
     {
-        CellState[] rowStates = CreateRandomNonUniformRow();
+        CellState firstState = cells[x, 0].State;
 
-        for (int x = 0; x < width; x++)
+        for (int y = 1; y < height; y++)
         {
-            cells[x, y].SetState(rowStates[x]);
+            if (cells[x, y].State != firstState)
+                return false;
         }
+
+        return true;
     }
 
-    private IEnumerator ResolvePlacementAnimation(List<int> completedRows, Action<int> onComplete)
+    private IEnumerator ResolvePlacementAnimation(ClearResult clearResult, Action<int> onComplete)
     {
         yield return new WaitForSeconds(flipAnimationDuration);
 
-        if (completedRows.Count > 0)
+        int totalClearedLines = 0;
+
+        while (clearResult.LineCount > 0)
         {
-            foreach (int y in completedRows)
+            totalClearedLines += clearResult.LineCount;
+
+            foreach (Vector2Int cellPosition in clearResult.Cells)
             {
-                PlayRowClearHighlight(y);
+                cells[cellPosition.x, cellPosition.y].PlayClearHighlight(
+                    rowClearHighlightDuration,
+                    rowClearPeakScale,
+                    rowClearHighlightColor,
+                    rowClearFlashCount
+                );
             }
 
             yield return new WaitForSeconds(rowClearHighlightDuration + rowClearHoldDuration);
 
-            for (int i = 0; i < completedRows.Count; i++)
+            RegenerateClearedCellsAnimated(clearResult);
+
+            yield return new WaitForSeconds(GetLineRegenerateTotalDuration());
+
+            clearResult = FindCompletedLines();
+        }
+
+        onComplete?.Invoke(totalClearedLines);
+    }
+
+    private void RegenerateClearedCellsAnimated(ClearResult clearResult)
+    {
+        Dictionary<Vector2Int, CellState> newStates = CreateReplacementStates(clearResult);
+
+        for (int i = 0; i < clearResult.Rows.Count; i++)
+        {
+            int y = clearResult.Rows[i];
+            float slideDirection = i % 2 == 0 ? -1f : 1f;
+
+            for (int x = 0; x < width; x++)
             {
-                int y = completedRows[i];
-                float slideDirection = i % 2 == 0 ? -1f : 1f;
-                RegenerateRowAnimated(y, slideDirection);
+                Vector2Int cellPosition = new Vector2Int(x, y);
+                float delay = slideDirection < 0f
+                    ? x * rowRegenerateStagger
+                    : (width - 1 - x) * rowRegenerateStagger;
+
+                cells[x, y].RegenerateSlideAnimated(
+                    newStates[cellPosition],
+                    rowRegenerateDuration,
+                    delay,
+                    rowRegenerateSlideDistance * slideDirection,
+                    rowRegeneratePeakScale
+                );
+            }
+        }
+
+        for (int i = 0; i < clearResult.Columns.Count; i++)
+        {
+            int x = clearResult.Columns[i];
+            float slideDirection = i % 2 == 0 ? 1f : -1f;
+
+            for (int y = 0; y < height; y++)
+            {
+                Vector2Int cellPosition = new Vector2Int(x, y);
+                if (clearResult.Rows.Contains(y))
+                    continue;
+
+                float delay = slideDirection > 0f
+                    ? (height - 1 - y) * rowRegenerateStagger
+                    : y * rowRegenerateStagger;
+
+                cells[x, y].RegenerateSlideAnimated(
+                    newStates[cellPosition],
+                    rowRegenerateDuration,
+                    delay,
+                    Vector2.up * rowRegenerateSlideDistance * slideDirection,
+                    rowRegeneratePeakScale
+                );
+            }
+        }
+    }
+
+    private Dictionary<Vector2Int, CellState> CreateReplacementStates(ClearResult clearResult)
+    {
+        Dictionary<Vector2Int, CellState> newStates = new Dictionary<Vector2Int, CellState>();
+
+        foreach (Vector2Int cellPosition in clearResult.Cells)
+        {
+            newStates[cellPosition] = GetRandomCellState();
+        }
+
+        PreventCompletedReplacementLines(clearResult, newStates);
+        return newStates;
+    }
+
+    private float GetLineRegenerateTotalDuration()
+    {
+        int longestLineLength = Mathf.Max(width, height);
+        return rowRegenerateDuration + Mathf.Max(0, longestLineLength - 1) * rowRegenerateStagger;
+    }
+
+    private void PreventStartingCompletedLines()
+    {
+        PreventCompletedLines(GetAllRows(), GetAllColumns());
+    }
+
+    private void PreventCompletedLines(List<int> rowsToCheck, List<int> columnsToCheck)
+    {
+        if (width <= 1 || height <= 1)
+            return;
+
+        const int maxAttempts = 32;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            bool changed = false;
+
+            foreach (int y in rowsToCheck)
+            {
+                if (!IsRowUniform(y))
+                    continue;
+
+                int x = Random.Range(0, width);
+                cells[x, y].SetState(GetOppositeState(cells[x, y].State));
+                changed = true;
             }
 
-            yield return new WaitForSeconds(GetRowRegenerateTotalDuration());
-        }
+            foreach (int x in columnsToCheck)
+            {
+                if (!IsColumnUniform(x))
+                    continue;
 
-        onComplete?.Invoke(completedRows.Count);
+                int y = Random.Range(0, height);
+                cells[x, y].SetState(GetOppositeState(cells[x, y].State));
+                changed = true;
+            }
+
+            if (!changed)
+                return;
+        }
     }
 
-    private void PlayRowClearHighlight(int y)
+    private void PreventCompletedReplacementLines(ClearResult clearResult, Dictionary<Vector2Int, CellState> newStates)
     {
+        if (width <= 1 || height <= 1)
+            return;
+
+        const int maxAttempts = 32;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            bool changed = false;
+
+            foreach (int y in clearResult.Rows)
+            {
+                if (!IsVirtualRowUniform(y, newStates))
+                    continue;
+
+                List<Vector2Int> editableCells = GetEditableRowCells(y, newStates);
+                if (editableCells.Count == 0)
+                    continue;
+
+                Vector2Int cellPosition = editableCells[Random.Range(0, editableCells.Count)];
+                newStates[cellPosition] = GetOppositeState(GetVirtualCellState(cellPosition.x, cellPosition.y, newStates));
+                changed = true;
+            }
+
+            foreach (int x in clearResult.Columns)
+            {
+                if (!IsVirtualColumnUniform(x, newStates))
+                    continue;
+
+                List<Vector2Int> editableCells = GetEditableColumnCells(x, newStates);
+                if (editableCells.Count == 0)
+                    continue;
+
+                Vector2Int cellPosition = editableCells[Random.Range(0, editableCells.Count)];
+                newStates[cellPosition] = GetOppositeState(GetVirtualCellState(cellPosition.x, cellPosition.y, newStates));
+                changed = true;
+            }
+
+            if (!changed)
+                return;
+        }
+    }
+
+    private bool IsVirtualRowUniform(int y, Dictionary<Vector2Int, CellState> newStates)
+    {
+        CellState firstState = GetVirtualCellState(0, y, newStates);
+
+        for (int x = 1; x < width; x++)
+        {
+            if (GetVirtualCellState(x, y, newStates) != firstState)
+                return false;
+        }
+
+        return true;
+    }
+
+    private bool IsVirtualColumnUniform(int x, Dictionary<Vector2Int, CellState> newStates)
+    {
+        CellState firstState = GetVirtualCellState(x, 0, newStates);
+
+        for (int y = 1; y < height; y++)
+        {
+            if (GetVirtualCellState(x, y, newStates) != firstState)
+                return false;
+        }
+
+        return true;
+    }
+
+    private CellState GetVirtualCellState(int x, int y, Dictionary<Vector2Int, CellState> newStates)
+    {
+        Vector2Int cellPosition = new Vector2Int(x, y);
+        return newStates.TryGetValue(cellPosition, out CellState state)
+            ? state
+            : cells[x, y].State;
+    }
+
+    private List<Vector2Int> GetEditableRowCells(int y, Dictionary<Vector2Int, CellState> newStates)
+    {
+        List<Vector2Int> editableCells = new List<Vector2Int>();
+
         for (int x = 0; x < width; x++)
         {
-            cells[x, y].PlayClearHighlight(
-                rowClearHighlightDuration,
-                rowClearPeakScale,
-                rowClearHighlightColor,
-                rowClearFlashCount
-            );
+            Vector2Int cellPosition = new Vector2Int(x, y);
+            if (newStates.ContainsKey(cellPosition))
+            {
+                editableCells.Add(cellPosition);
+            }
         }
+
+        return editableCells;
     }
 
-    private void RegenerateRowAnimated(int y, float slideDirection)
+    private List<Vector2Int> GetEditableColumnCells(int x, Dictionary<Vector2Int, CellState> newStates)
     {
-        CellState[] rowStates = CreateRandomNonUniformRow();
+        List<Vector2Int> editableCells = new List<Vector2Int>();
+
+        for (int y = 0; y < height; y++)
+        {
+            Vector2Int cellPosition = new Vector2Int(x, y);
+            if (newStates.ContainsKey(cellPosition))
+            {
+                editableCells.Add(cellPosition);
+            }
+        }
+
+        return editableCells;
+    }
+
+    private List<int> GetAllRows()
+    {
+        List<int> rows = new List<int>();
+
+        for (int y = 0; y < height; y++)
+        {
+            rows.Add(y);
+        }
+
+        return rows;
+    }
+
+    private List<int> GetAllColumns()
+    {
+        List<int> columns = new List<int>();
 
         for (int x = 0; x < width; x++)
         {
-            float delay = slideDirection < 0f
-                ? x * rowRegenerateStagger
-                : (width - 1 - x) * rowRegenerateStagger;
-
-            cells[x, y].RegenerateSlideAnimated(
-                rowStates[x],
-                rowRegenerateDuration,
-                delay,
-                rowRegenerateSlideDistance * slideDirection,
-                rowRegeneratePeakScale
-            );
+            columns.Add(x);
         }
-    }
 
-    private float GetRowRegenerateTotalDuration()
-    {
-        return rowRegenerateDuration + Mathf.Max(0, width - 1) * rowRegenerateStagger;
+        return columns;
     }
 
     private CellState[] CreateRandomNonUniformRow()
@@ -302,6 +549,13 @@ public class GridManager : MonoBehaviour
         return Random.value > 0.5f
             ? CellState.White
             : CellState.Black;
+    }
+
+    private CellState GetOppositeState(CellState state)
+    {
+        return state == CellState.White
+            ? CellState.Black
+            : CellState.White;
     }
 
     public Vector2Int FindOverlappingCell(Vector2 screenPosition)
