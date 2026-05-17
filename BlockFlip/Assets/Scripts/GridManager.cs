@@ -86,10 +86,11 @@ public class GridManager : MonoBehaviour
             EnsureBackground(canvas.transform);
         }
 
-        ConfigurePanel("TopHUD", new Vector2(0f, 0.86f), new Vector2(1f, 1f), Color.clear, false);
-        ConfigurePanel("GridRoot", new Vector2(0.075f, 0.315f), new Vector2(0.925f, 0.845f), Color.clear, false);
-        ConfigurePanel("BlockTray", new Vector2(0.075f, 0.135f), new Vector2(0.925f, 0.29f), panelColor, true);
-        ConfigurePanel("Controls", new Vector2(0f, 0f), new Vector2(1f, 0.12f), Color.clear, false);
+        float anchor_offset_y = -0.05f;
+        ConfigurePanel("TopHUD", new Vector2(0f, 0.86f+anchor_offset_y), new Vector2(1f, 1f+anchor_offset_y), Color.clear, false);
+        ConfigurePanel("GridRoot", new Vector2(0.075f, 0.315f+anchor_offset_y), new Vector2(0.925f, 0.845f+anchor_offset_y), Color.clear, false);
+        ConfigurePanel("BlockTray", new Vector2(0.075f, 0.135f+anchor_offset_y), new Vector2(0.925f, 0.29f+anchor_offset_y), panelColor, true);
+        ConfigurePanel("Controls", new Vector2(0f, 0f+anchor_offset_y), new Vector2(1f, 0.12f+anchor_offset_y), Color.clear, false);
 
         ConfigureTopHud();
         ConfigureTray();

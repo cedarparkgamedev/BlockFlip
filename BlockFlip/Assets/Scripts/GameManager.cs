@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Pause UI")]
     [SerializeField] private PauseMenuView pauseMenuPrefab;
+    [SerializeField] private float pauseButtonNormalizedYOffset = 0.05f;
     [SerializeField] private Color pauseButtonColor = new Color(1f, 0.985f, 0.955f, 0.92f);
     [SerializeField] private Color textColor = new Color(0.045f, 0.045f, 0.045f, 1f);
 
@@ -194,7 +195,11 @@ public class GameManager : MonoBehaviour
         buttonRect.anchorMax = new Vector2(0f, 1f);
         buttonRect.pivot = new Vector2(0.5f, 0.5f);
         buttonRect.sizeDelta = new Vector2(92f, 92f);
-        buttonRect.anchoredPosition = new Vector2(96f, -96f);
+        RectTransform canvasRect = canvas.transform as RectTransform;
+        float safeYOffset = canvasRect != null
+            ? canvasRect.rect.height * pauseButtonNormalizedYOffset
+            : 0f;
+        buttonRect.anchoredPosition = new Vector2(96f, -96f - safeYOffset);
 
         Image buttonImage = buttonObject.GetComponent<Image>();
         buttonImage.sprite = GetCircleButtonSprite();
