@@ -518,6 +518,9 @@ MonoBehaviour:
   textColor: {r: 0.045, g: 0.045, b: 0.045, a: 1}
   gameOverMenuPrefab: {fileID: 100004, guid: d8d3f1b0bd77406e8df95dd67ed2cb55, type: 3}
   bestScorePrefsKey: BestScore
+  shadowEffectColor: {r: 0, g: 0, b: 0, a: 0.3}
+  shadowEffectDistance: {x: 10, y: -10}
+  shadowUseGraphicAlpha: 1
 --- !u!1 &393741326
 GameObject:
   m_ObjectHideFlags: 0
@@ -604,7 +607,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 46.4
+  m_fontSize: 56.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -891,7 +894,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 46.4
+  m_fontSize: 56.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1556,7 +1559,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 46.4
+  m_fontSize: 56.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1816,7 +1819,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 46.4
+  m_fontSize: 56.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1902,8 +1905,8 @@ MonoBehaviour:
   height: 9
   cellPrefab: {fileID: 6988269069182093721, guid: 180da5e87d0bf4a87abb99b4033d80d2, type: 3}
   cellRoot: {fileID: 68853366}
-  flipAnimationDuration: 0.16
-  flipPeakScale: 1.12
+  flipAnimationDuration: 0.5
+  flipPeakScale: 1
   rowClearHighlightDuration: 0.58
   rowClearPeakScale: 1.18
   rowClearHighlightColor: {r: 1, g: 0.88, b: 0.2, a: 1}
@@ -1925,7 +1928,6 @@ MonoBehaviour:
   slotColor: {r: 1, g: 1, b: 1, a: 0.48}
   textColor: {r: 0.045, g: 0.045, b: 0.045, a: 1}
   subtleTextColor: {r: 0.22, g: 0.205, b: 0.19, a: 1}
-  panelShadowAlpha: 0.24
 --- !u!4 &2021057399
 Transform:
   m_ObjectHideFlags: 0
