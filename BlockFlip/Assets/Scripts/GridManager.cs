@@ -56,15 +56,13 @@ public class GridManager : MonoBehaviour
 
         for (int y = 0; y < height; y++)
         {
+            CellState[] rowStates = CreateRandomNonUniformRow();
+
             for (int x = 0; x < width; x++)
             {
                 PuzzleCell cell = Instantiate(cellPrefab, cellRoot);
 
-                CellState randomState = Random.value > 0.5f
-                    ? CellState.White
-                    : CellState.Black;
-
-                cell.Initialize(x, y, randomState);
+                cell.Initialize(x, y, rowStates[x]);
                 cells[x, y] = cell;
             }
         }
@@ -192,13 +190,11 @@ public class GridManager : MonoBehaviour
 
     private void RegenerateRow(int y)
     {
+        CellState[] rowStates = CreateRandomNonUniformRow();
+
         for (int x = 0; x < width; x++)
         {
-            CellState randomState = Random.value > 0.5f
-                ? CellState.White
-                : CellState.Black;
-
-            cells[x, y].SetState(randomState);
+            cells[x, y].SetState(rowStates[x]);
         }
     }
 
@@ -243,18 +239,16 @@ public class GridManager : MonoBehaviour
 
     private void RegenerateRowAnimated(int y, float slideDirection)
     {
+        CellState[] rowStates = CreateRandomNonUniformRow();
+
         for (int x = 0; x < width; x++)
         {
-            CellState randomState = Random.value > 0.5f
-                ? CellState.White
-                : CellState.Black;
-
             float delay = slideDirection < 0f
                 ? x * rowRegenerateStagger
                 : (width - 1 - x) * rowRegenerateStagger;
 
             cells[x, y].RegenerateSlideAnimated(
-                randomState,
+                rowStates[x],
                 rowRegenerateDuration,
                 delay,
                 rowRegenerateSlideDistance * slideDirection,
@@ -266,6 +260,48 @@ public class GridManager : MonoBehaviour
     private float GetRowRegenerateTotalDuration()
     {
         return rowRegenerateDuration + Mathf.Max(0, width - 1) * rowRegenerateStagger;
+    }
+
+    private CellState[] CreateRandomNonUniformRow()
+    {
+        CellState[] rowStates = new CellState[width];
+
+        if (width <= 1)
+        {
+            rowStates[0] = GetRandomCellState();
+            return rowStates;
+        }
+
+        do
+        {
+            for (int x = 0; x < width; x++)
+            {
+                rowStates[x] = GetRandomCellState();
+            }
+        }
+        while (IsUniform(rowStates));
+
+        return rowStates;
+    }
+
+    private bool IsUniform(CellState[] rowStates)
+    {
+        CellState firstState = rowStates[0];
+
+        for (int x = 1; x < rowStates.Length; x++)
+        {
+            if (rowStates[x] != firstState)
+                return false;
+        }
+
+        return true;
+    }
+
+    private CellState GetRandomCellState()
+    {
+        return Random.value > 0.5f
+            ? CellState.White
+            : CellState.Black;
     }
 
     public Vector2Int FindOverlappingCell(Vector2 screenPosition)

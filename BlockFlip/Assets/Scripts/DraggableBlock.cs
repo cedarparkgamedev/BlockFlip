@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -31,6 +32,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         blockVisual = GetComponent<BlockVisual>();
         canvas = GetComponentInParent<Canvas>();
         trayTileSize = blockVisual.TileSize;
+        ConfigureDragHitArea();
 
         // TODO:
         // 여기서 shape.Cells를 기반으로 작은 UI 타일들을 생성해서 블록 모양 표시
@@ -90,6 +92,19 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         }
 
         tray.ReplaceBlock(this);
+    }
+
+    private void ConfigureDragHitArea()
+    {
+        Image hitArea = GetComponent<Image>();
+        if (hitArea == null)
+        {
+            hitArea = gameObject.AddComponent<Image>();
+        }
+
+        hitArea.enabled = true;
+        hitArea.raycastTarget = true;
+        hitArea.color = Color.clear;
     }
 
     private void SetDraggingPosition(PointerEventData eventData)
