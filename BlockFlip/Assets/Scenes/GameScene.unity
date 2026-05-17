@@ -2040,6 +2040,8 @@ MonoBehaviour:
   pauseMenuPrefab: {fileID: 100004, guid: 9c87784cdb354e36ad1cb4c2db1ef03a, type: 3}
   pauseButtonColor: {r: 1, g: 0.985, b: 0.955, a: 0.92}
   textColor: {r: 0.045, g: 0.045, b: 0.045, a: 1}
+  gameOverMenuPrefab: {fileID: 100004, guid: d8d3f1b0bd77406e8df95dd67ed2cb55, type: 3}
+  bestScorePrefsKey: BestScore
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

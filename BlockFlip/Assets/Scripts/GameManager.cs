@@ -16,9 +16,15 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Color pauseButtonColor = new Color(1f, 0.985f, 0.955f, 0.92f);
     [SerializeField] private Color textColor = new Color(0.045f, 0.045f, 0.045f, 1f);
 
+    [Header("Game Over UI")]
+    [SerializeField] private GameOverMenuView gameOverMenuPrefab;
+    [SerializeField] private string bestScorePrefsKey = "BestScore";
+
     private PauseMenuView pauseMenu;
+    private GameOverMenuView gameOverMenu;
     private Coroutine initializeSceneUiCoroutine;
     private bool isPaused;
+    private bool isGameOver;
     private static Sprite circleButtonSprite;
 
     public bool IsPaused => isPaused;
@@ -49,6 +55,17 @@ public class GameManager : MonoBehaviour
     {
         InitializeSceneUi();
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1) &&
+            (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
+        {
+            ShowGameOver();
+        }
+    }
+#endif
 
     private void OnDestroy()
     {
@@ -81,6 +98,8 @@ public class GameManager : MonoBehaviour
         Application.targetFrameRate = targetFrameRate;
         EnsurePauseButton();
         EnsurePauseMenu();
+        EnsureGameOverMenu();
+        isGameOver = false;
         ResumeGame();
     }
 
@@ -98,6 +117,9 @@ public class GameManager : MonoBehaviour
 
     public void PauseGame()
     {
+        if (isGameOver)
+            return;
+
         isPaused = true;
         Time.timeScale = 0f;
 
@@ -109,6 +131,9 @@ public class GameManager : MonoBehaviour
 
     public void ResumeGame()
     {
+        if (isGameOver)
+            return;
+
         isPaused = false;
         Time.timeScale = 1f;
 
@@ -116,6 +141,38 @@ public class GameManager : MonoBehaviour
         {
             pauseMenu.Hide();
         }
+    }
+
+    public void ShowGameOver()
+    {
+        isGameOver = true;
+        isPaused = false;
+        Time.timeScale = 0f;
+
+        if (pauseMenu != null)
+        {
+            pauseMenu.Hide();
+        }
+
+        EnsureGameOverMenu();
+        if (gameOverMenu == null)
+            return;
+
+        int score = ScoreManager.instance != null ? ScoreManager.instance.Score : 0;
+        int lines = ScoreManager.instance != null ? ScoreManager.instance.TotalClearedLines : 0;
+        int maxCombo = ScoreManager.instance != null ? ScoreManager.instance.MaxCombo : 0;
+        int previousBest = PlayerPrefs.GetInt(bestScorePrefsKey, 0);
+        bool isNewBest = score > previousBest;
+        int bestScore = isNewBest ? score : previousBest;
+
+        if (isNewBest)
+        {
+            PlayerPrefs.SetInt(bestScorePrefsKey, score);
+            PlayerPrefs.Save();
+        }
+
+        gameOverMenu.SetStats(score, bestScore, lines, maxCombo, isNewBest);
+        gameOverMenu.Show();
     }
 
     private void EnsurePauseButton()
@@ -215,6 +272,34 @@ public class GameManager : MonoBehaviour
         pauseMenu.Initialize(ResumeGame, RestartGame, OpenSettings, ReturnToHome);
     }
 
+    private void EnsureGameOverMenu()
+    {
+        Canvas canvas = FindAnyObjectByType<Canvas>();
+        if (canvas == null)
+            return;
+
+        Transform existing = canvas.transform.Find("GameOverMenu");
+        gameOverMenu = existing != null
+            ? existing.GetComponent<GameOverMenuView>()
+            : null;
+
+        if (gameOverMenu == null)
+        {
+            if (gameOverMenuPrefab == null)
+            {
+                Debug.LogWarning("Game over menu prefab is not assigned to GameManager.");
+                return;
+            }
+
+            gameOverMenu = Instantiate(gameOverMenuPrefab, canvas.transform, false);
+            gameOverMenu.name = "GameOverMenu";
+        }
+
+        gameOverMenu.transform.SetAsLastSibling();
+        gameOverMenu.Initialize(RestartGame, ReturnToHome);
+        gameOverMenu.Hide();
+    }
+
     private void OpenSettings()
     {
         Debug.Log("Settings menu is not implemented yet.");
@@ -222,6 +307,7 @@ public class GameManager : MonoBehaviour
 
     private void RestartGame()
     {
+        isGameOver = false;
         Time.timeScale = 1f;
         Scene activeScene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(activeScene.buildIndex);
@@ -229,6 +315,7 @@ public class GameManager : MonoBehaviour
 
     private void ReturnToHome()
     {
+        isGameOver = false;
         Time.timeScale = 1f;
 
         if (!string.IsNullOrWhiteSpace(homeSceneName) &&

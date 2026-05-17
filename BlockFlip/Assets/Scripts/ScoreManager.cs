@@ -10,6 +10,13 @@ public class ScoreManager : MonoBehaviour
 
     private int score;
     private int combo;
+    private int maxCombo;
+    private int totalClearedLines;
+
+    public int Score => score;
+    public int Combo => combo;
+    public int MaxCombo => maxCombo;
+    public int TotalClearedLines => totalClearedLines;
 
     void Awake()
     {
@@ -30,6 +37,8 @@ public class ScoreManager : MonoBehaviour
         }
 
         combo++;
+        maxCombo = Mathf.Max(maxCombo, combo);
+        totalClearedLines += rowCount;
 
         int baseScore = 100 * rowCount;
         int multiLineBonus = rowCount > 1 ? rowCount * 100 : 0;
