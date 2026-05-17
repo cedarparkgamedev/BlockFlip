@@ -6,6 +6,8 @@ public class GridDropResolver : MonoBehaviour
     [SerializeField] private GridManager gridManager;
     [SerializeField] private RectTransform gridRect;
 
+    public float GridCellSize => gridManager.CellSize;
+
     public bool TryPlaceBlock(DraggableBlock block, PointerEventData eventData)
     {
         if (!TryFindBlockOrigin(block, eventData.pressEventCamera, out Vector2Int origin))

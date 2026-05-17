@@ -9,6 +9,8 @@ public class BlockVisual : MonoBehaviour
 
     private readonly List<VisualTile> visualTiles = new List<VisualTile>();
 
+    public float TileSize => tileSize;
+
     private struct VisualTile
     {
         public Vector2Int ShapeCell;
@@ -23,8 +25,15 @@ public class BlockVisual : MonoBehaviour
 
     public void Build(BlockShape shape)
     {
+        Build(shape, tileSize);
+    }
+
+    public void Build(BlockShape shape, float newTileSize)
+    {
         if (shape == null || shape.Cells.Count == 0)
             return;
+
+        tileSize = newTileSize;
 
         foreach (Transform child in tileRoot)
         {

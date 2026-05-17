@@ -10,9 +10,11 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Transform cellRoot;
 
     private PuzzleCell[,] cells;
+    private float cellSize;
 
     public int Width => width;
     public int Height => height;
+    public float CellSize => cellSize;
 
     private void Start()
     {
@@ -23,7 +25,15 @@ public class GridManager : MonoBehaviour
     {
         GridLayoutGroup gridLayoutGroup = cellRoot.GetComponent<GridLayoutGroup>();
 
-        gridLayoutGroup.constraintCount = width;
+        ConfigureGridLayout(gridLayoutGroup);
+
+        foreach (Transform child in cellRoot)
+        {
+            Destroy(child.gameObject);
+        }
+
+        if (width <= 0 || height <= 0)
+            return;
 
         cells = new PuzzleCell[width, height];
 
@@ -41,6 +51,36 @@ public class GridManager : MonoBehaviour
                 cells[x, y] = cell;
             }
         }
+    }
+
+    private void ConfigureGridLayout(GridLayoutGroup gridLayoutGroup)
+    {
+        if (gridLayoutGroup == null || width <= 0 || height <= 0)
+            return;
+
+        RectTransform rootRect = cellRoot.GetComponent<RectTransform>();
+        if (rootRect == null)
+            return;
+
+        Canvas.ForceUpdateCanvases();
+
+        Rect rect = rootRect.rect;
+        RectOffset padding = gridLayoutGroup.padding;
+        Vector2 spacing = gridLayoutGroup.spacing;
+
+        float availableWidth = rect.width - padding.left - padding.right - spacing.x * (width - 1);
+        float availableHeight = rect.height - padding.top - padding.bottom - spacing.y * (height - 1);
+        cellSize = Mathf.Max(1f, Mathf.Floor(Mathf.Min(
+            availableWidth / width,
+            availableHeight / height
+        )));
+
+        gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayoutGroup.constraintCount = width;
+        gridLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        gridLayoutGroup.cellSize = new Vector2(cellSize, cellSize);
+
+        LayoutRebuilder.MarkLayoutForRebuild(rootRect);
     }
 
     public bool CanPlaceBlock(BlockShape shape, int originX, int originY)
