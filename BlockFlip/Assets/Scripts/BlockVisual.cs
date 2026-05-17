@@ -96,4 +96,19 @@ public class BlockVisual : MonoBehaviour
         screenPosition = Vector2.zero;
         return false;
     }
+
+    public float GetBottomScreenY(Camera camera)
+    {
+        Vector3[] corners = new Vector3[4];
+        tileRoot.GetWorldCorners(corners);
+
+        float bottomY = float.MaxValue;
+        foreach (Vector3 corner in corners)
+        {
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(camera, corner);
+            bottomY = Mathf.Min(bottomY, screenPoint.y);
+        }
+
+        return bottomY;
+    }
 }

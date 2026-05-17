@@ -125,6 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e14356db54ea44eb9d1f664cf0ee27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DraggableBlock
+  BlockPosYOffsetWhileDragging: 50
 --- !u!114 &9140856337387896988
 MonoBehaviour:
   m_ObjectHideFlags: 0

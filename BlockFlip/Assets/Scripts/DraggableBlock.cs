@@ -3,6 +3,8 @@ using UnityEngine.EventSystems;
 
 public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    [SerializeField] private float BlockPosYOffsetWhileDragging;
+
     private BlockShape shape;
     private BlockTray tray;
     private BlockVisual blockVisual;
@@ -40,17 +42,18 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         resolver = FindAnyObjectByType<GridDropResolver>();
 
         transform.SetParent(canvas.transform, true);
-        rectTransform.position = eventData.position;
 
         if (resolver != null)
         {
             blockVisual.Build(shape, resolver.GridCellSize);
         }
+
+        SetDraggingPosition(eventData);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        rectTransform.position = eventData.position;
+        SetDraggingPosition(eventData);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -66,6 +69,41 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             transform.SetParent(originalParent, true);
             rectTransform.anchoredPosition = originalAnchoredPosition;
             blockVisual.Build(shape, trayTileSize);
+        }
+    }
+
+    private void SetDraggingPosition(PointerEventData eventData)
+    {
+        RectTransform parentRect = rectTransform.parent as RectTransform;
+        if (parentRect == null)
+        {
+            rectTransform.position = eventData.position;
+            return;
+        }
+
+        Camera camera = eventData.pressEventCamera;
+        if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                parentRect,
+                eventData.position,
+                camera,
+                out Vector3 pointerWorldPosition))
+        {
+            return;
+        }
+
+        rectTransform.position = pointerWorldPosition;
+
+        float targetBottomY = eventData.position.y + BlockPosYOffsetWhileDragging;
+        float currentBottomY = blockVisual.GetBottomScreenY(camera);
+        Vector2 adjustedPointerPosition = eventData.position + Vector2.up * (targetBottomY - currentBottomY);
+
+        if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                parentRect,
+                adjustedPointerPosition,
+                camera,
+                out Vector3 adjustedWorldPosition))
+        {
+            rectTransform.position = adjustedWorldPosition;
         }
     }
 }
