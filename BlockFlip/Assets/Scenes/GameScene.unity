@@ -1871,8 +1871,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8124c9e43a2f745e2851eb023fb8213b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  width: 6
-  height: 5
+  width: 9
+  height: 9
   cellPrefab: {fileID: 6988269069182093721, guid: 180da5e87d0bf4a87abb99b4033d80d2, type: 3}
   cellRoot: {fileID: 68853366}
   flipAnimationDuration: 0.16
@@ -1892,6 +1892,13 @@ MonoBehaviour:
   previewScale: 1.08
   clearPreviewColor: {r: 1, g: 0.86, b: 0.15, a: 0.72}
   clearPreviewScale: 1.16
+  applyReferenceStyle: 1
+  backgroundColor: {r: 0.93, g: 0.915, b: 0.89, a: 1}
+  panelColor: {r: 1, g: 0.985, b: 0.955, a: 0.78}
+  slotColor: {r: 1, g: 1, b: 1, a: 0.48}
+  textColor: {r: 0.045, g: 0.045, b: 0.045, a: 1}
+  subtleTextColor: {r: 0.22, g: 0.205, b: 0.19, a: 1}
+  panelShadowAlpha: 0.24
 --- !u!4 &2021057399
 Transform:
   m_ObjectHideFlags: 0

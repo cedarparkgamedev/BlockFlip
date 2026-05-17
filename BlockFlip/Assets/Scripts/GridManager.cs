@@ -56,10 +56,12 @@ public class GridManager : MonoBehaviour
     private PuzzleCell[,] cells;
     private float cellSize;
     private readonly List<PuzzleCell> previewCells = new List<PuzzleCell>();
+    private DangerManager dangerManager;
 
     public int Width => width;
     public int Height => height;
     public float CellSize => cellSize;
+    public DangerManager DangerManager => dangerManager;
 
     private void Start()
     {
@@ -218,7 +220,14 @@ public class GridManager : MonoBehaviour
         panelRect.offsetMax = Vector2.zero;
 
         EnsureHudText(dangerPanel.transform, "Danger_Label", "DANGER", new Vector2(0f, 0.55f), new Vector2(1f, 1f), 28f, true);
-        EnsureDangerBar(dangerPanel.transform);
+        Image dangerFillImage = EnsureDangerBar(dangerPanel.transform);
+        dangerManager = FindAnyObjectByType<DangerManager>();
+        if (dangerManager == null)
+        {
+            dangerManager = new GameObject("DangerManager").AddComponent<DangerManager>();
+        }
+
+        dangerManager.SetFillImage(dangerFillImage);
     }
 
     private void EnsureHudText(Transform parent, string name, string text, Vector2 anchorMin, Vector2 anchorMax, float fontSize, bool labelStyle)
@@ -247,7 +256,7 @@ public class GridManager : MonoBehaviour
         textComponent.raycastTarget = false;
     }
 
-    private void EnsureDangerBar(Transform parent)
+    private Image EnsureDangerBar(Transform parent)
     {
         Transform existing = parent.Find("Danger_Bar");
         GameObject barObject = existing != null
@@ -265,6 +274,7 @@ public class GridManager : MonoBehaviour
         barImage.color = new Color(0.08f, 0.075f, 0.07f, 0.82f);
         barImage.raycastTarget = false;
         AddShadow(barObject, new Vector2(0f, -3f), 0.18f);
+        return barImage;
     }
 
     private void ConfigureTray()

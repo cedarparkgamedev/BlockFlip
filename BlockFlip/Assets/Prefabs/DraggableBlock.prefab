@@ -128,6 +128,7 @@ MonoBehaviour:
   BlockPosYOffsetWhileDragging: 50
   dropReleaseDuration: 0.12
   dropReleaseScale: 0.72
+  trayBlockPadding: 26
   previewDelay: 1
   previewMoveTolerance: 8
 --- !u!114 &9140856337387896988
@@ -144,4 +145,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisual
   tilePrefab: {fileID: 8959122144465476936, guid: c3f8bbee3b3cf4293a656918293ff148, type: 3}
   tileRoot: {fileID: 8730548590215866419}
+  blockTileColor: {r: 0.28, g: 0.27, b: 0.25, a: 1}
+  tileGap: 6
   tileSize: 100

@@ -6,7 +6,7 @@ public class BlockVisual : MonoBehaviour
 {
     [SerializeField] private RectTransform tilePrefab;
     [SerializeField] private RectTransform tileRoot;
-    [SerializeField] private Color blockTileColor = new Color(0.045f, 0.045f, 0.042f, 1f);
+    [SerializeField] private Color blockTileColor = new Color(0.28f, 0.27f, 0.25f, 1f);
     [SerializeField] private float tileGap = 6f;
     public float tileSize = 40f;
 
@@ -137,7 +137,7 @@ public class BlockVisual : MonoBehaviour
             shadow = tile.gameObject.AddComponent<Shadow>();
         }
 
-        shadow.effectColor = new Color(0f, 0f, 0f, 0.36f);
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.32f);
         shadow.effectDistance = new Vector2(3f, -4f);
         shadow.useGraphicAlpha = true;
     }
