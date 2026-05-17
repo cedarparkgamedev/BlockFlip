@@ -15,6 +15,7 @@ public class PuzzleCell : MonoBehaviour
     private RectTransform rectTransform;
     private Coroutine animationRoutine;
     private Vector3 originalScale;
+    private bool isPreviewing;
 
     public int X { get; private set; }
     public int Y { get; private set; }
@@ -47,6 +48,7 @@ public class PuzzleCell : MonoBehaviour
     public void SetState(CellState state)
     {
         State = state;
+        isPreviewing = false;
 
         if (image != null)
         {
@@ -158,6 +160,50 @@ public class PuzzleCell : MonoBehaviour
             highlightColor,
             flashCount
         ));
+    }
+
+    public void ShowPreview(CellState previewState, Color previewColor, float previewScale)
+    {
+        ShowPreview(previewState, previewColor, previewScale, false);
+    }
+
+    public void ShowPreview(CellState previewState, Color previewColor, float previewScale, bool useSolidPreviewColor)
+    {
+        CacheRectTransform();
+        isPreviewing = true;
+
+        if (animationRoutine != null)
+        {
+            StopCoroutine(animationRoutine);
+            animationRoutine = null;
+        }
+
+        if (image != null)
+        {
+            image.color = useSolidPreviewColor
+                ? new Color(previewColor.r, previewColor.g, previewColor.b, 1f)
+                : Color.Lerp(GetColor(previewState), previewColor, previewColor.a);
+        }
+
+        rectTransform.localScale = originalScale * previewScale;
+    }
+
+    public void ClearPreview()
+    {
+        if (!isPreviewing)
+            return;
+
+        isPreviewing = false;
+
+        if (image != null)
+        {
+            image.color = GetColor(State);
+        }
+
+        if (rectTransform != null)
+        {
+            rectTransform.localScale = originalScale;
+        }
     }
 
     private IEnumerator AnimateStateChange(Color targetColor, float duration, float peakScale)

@@ -126,6 +126,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DraggableBlock
   BlockPosYOffsetWhileDragging: 50
+  dropReleaseDuration: 0.12
+  dropReleaseScale: 0.72
+  previewDelay: 1
+  previewMoveTolerance: 8
 --- !u!114 &9140856337387896988
 MonoBehaviour:
   m_ObjectHideFlags: 0

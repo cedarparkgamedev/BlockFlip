@@ -1871,10 +1871,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8124c9e43a2f745e2851eb023fb8213b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  width: 9
-  height: 9
+  width: 6
+  height: 5
   cellPrefab: {fileID: 6988269069182093721, guid: 180da5e87d0bf4a87abb99b4033d80d2, type: 3}
   cellRoot: {fileID: 68853366}
+  flipAnimationDuration: 0.16
+  flipPeakScale: 1.12
+  rowClearHighlightDuration: 0.58
+  rowClearPeakScale: 1.18
+  rowClearHighlightColor: {r: 1, g: 0.88, b: 0.2, a: 1}
+  rowClearFlashCount: 3
+  rowClearHoldDuration: 0.08
+  rowRegenerateDuration: 0.3
+  rowRegenerateSlideDistance: 240
+  rowRegeneratePeakScale: 1.08
+  rowRegenerateStagger: 0.035
+  showFlipPreview: 0
+  showClearPreview: 1
+  previewColor: {r: 0.35, g: 0.75, b: 1, a: 0.55}
+  previewScale: 1.08
+  clearPreviewColor: {r: 1, g: 0.86, b: 0.15, a: 0.72}
+  clearPreviewScale: 1.16
 --- !u!4 &2021057399
 Transform:
   m_ObjectHideFlags: 0

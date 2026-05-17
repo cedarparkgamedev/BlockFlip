@@ -8,8 +8,27 @@ public class GridDropResolver : MonoBehaviour
 
     public float GridCellSize => gridManager.CellSize;
 
+    public void ShowPreview(DraggableBlock block, Camera camera)
+    {
+        if (!TryFindBlockOrigin(block, camera, out Vector2Int origin) ||
+            !gridManager.CanPlaceBlock(block.Shape, origin.x, origin.y))
+        {
+            gridManager.ClearPlacementPreview();
+            return;
+        }
+
+        gridManager.ShowPlacementPreview(block.Shape, origin.x, origin.y);
+    }
+
+    public void ClearPreview()
+    {
+        gridManager.ClearPlacementPreview();
+    }
+
     public bool TryPlaceBlock(DraggableBlock block, PointerEventData eventData)
     {
+        ClearPreview();
+
         if (!TryFindBlockOrigin(block, eventData.pressEventCamera, out Vector2Int origin))
             return false;
 

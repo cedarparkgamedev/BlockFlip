@@ -35,8 +35,17 @@ public class GridManager : MonoBehaviour
     [SerializeField] private float rowRegeneratePeakScale = 1.08f;
     [SerializeField] private float rowRegenerateStagger = 0.045f;
 
+    [Header("Preview")]
+    [SerializeField] private bool showFlipPreview = true;
+    [SerializeField] private bool showClearPreview = true;
+    [SerializeField] private Color previewColor = new Color(0.35f, 0.75f, 1f, 0.55f);
+    [SerializeField] private float previewScale = 1.08f;
+    [SerializeField] private Color clearPreviewColor = new Color(1f, 0.86f, 0.15f, 0.72f);
+    [SerializeField] private float clearPreviewScale = 1.16f;
+
     private PuzzleCell[,] cells;
     private float cellSize;
+    private readonly List<PuzzleCell> previewCells = new List<PuzzleCell>();
 
     public int Width => width;
     public int Height => height;
@@ -140,8 +149,59 @@ public class GridManager : MonoBehaviour
         return clearedLines;
     }
 
+    public void ShowPlacementPreview(BlockShape shape, int originX, int originY)
+    {
+        ClearPlacementPreview();
+
+        if (!CanPlaceBlock(shape, originX, originY))
+            return;
+
+        Dictionary<Vector2Int, CellState> previewStates = CreatePlacementPreviewStates(shape, originX, originY);
+
+        if (showFlipPreview)
+        {
+            foreach (KeyValuePair<Vector2Int, CellState> previewState in previewStates)
+            {
+                Vector2Int cellPosition = previewState.Key;
+                PuzzleCell cell = cells[cellPosition.x, cellPosition.y];
+
+                cell.ShowPreview(previewState.Value, previewColor, previewScale);
+                previewCells.Add(cell);
+            }
+        }
+
+        if (showClearPreview)
+        {
+            ClearResult previewClearResult = FindCompletedLines(previewStates);
+
+            foreach (Vector2Int cellPosition in previewClearResult.Cells)
+            {
+                PuzzleCell cell = cells[cellPosition.x, cellPosition.y];
+                CellState previewState = GetVirtualCellState(cellPosition.x, cellPosition.y, previewStates);
+
+                cell.ShowPreview(previewState, clearPreviewColor, clearPreviewScale, true);
+                previewCells.Add(cell);
+            }
+        }
+    }
+
+    public void ClearPlacementPreview()
+    {
+        foreach (PuzzleCell cell in previewCells)
+        {
+            if (cell != null)
+            {
+                cell.ClearPreview();
+            }
+        }
+
+        previewCells.Clear();
+    }
+
     public bool TryPlaceBlockAnimated(BlockShape shape, int originX, int originY, Action<int> onComplete)
     {
+        ClearPlacementPreview();
+
         if (!CanPlaceBlock(shape, originX, originY))
             return false;
 
@@ -174,11 +234,16 @@ public class GridManager : MonoBehaviour
 
     private ClearResult FindCompletedLines()
     {
+        return FindCompletedLines(null);
+    }
+
+    private ClearResult FindCompletedLines(Dictionary<Vector2Int, CellState> virtualStates)
+    {
         ClearResult clearResult = new ClearResult();
 
         for (int y = 0; y < height; y++)
         {
-            if (IsRowUniform(y))
+            if (IsRowUniform(y, virtualStates))
             {
                 clearResult.Rows.Add(y);
 
@@ -191,7 +256,7 @@ public class GridManager : MonoBehaviour
 
         for (int x = 0; x < width; x++)
         {
-            if (IsColumnUniform(x))
+            if (IsColumnUniform(x, virtualStates))
             {
                 clearResult.Columns.Add(x);
 
@@ -207,11 +272,16 @@ public class GridManager : MonoBehaviour
 
     private bool IsRowUniform(int y)
     {
-        CellState firstState = cells[0, y].State;
+        return IsRowUniform(y, null);
+    }
+
+    private bool IsRowUniform(int y, Dictionary<Vector2Int, CellState> virtualStates)
+    {
+        CellState firstState = GetVirtualCellState(0, y, virtualStates);
 
         for (int x = 1; x < width; x++)
         {
-            if (cells[x, y].State != firstState)
+            if (GetVirtualCellState(x, y, virtualStates) != firstState)
                 return false;
         }
 
@@ -220,15 +290,36 @@ public class GridManager : MonoBehaviour
 
     private bool IsColumnUniform(int x)
     {
-        CellState firstState = cells[x, 0].State;
+        return IsColumnUniform(x, null);
+    }
+
+    private bool IsColumnUniform(int x, Dictionary<Vector2Int, CellState> virtualStates)
+    {
+        CellState firstState = GetVirtualCellState(x, 0, virtualStates);
 
         for (int y = 1; y < height; y++)
         {
-            if (cells[x, y].State != firstState)
+            if (GetVirtualCellState(x, y, virtualStates) != firstState)
                 return false;
         }
 
         return true;
+    }
+
+    private Dictionary<Vector2Int, CellState> CreatePlacementPreviewStates(BlockShape shape, int originX, int originY)
+    {
+        Dictionary<Vector2Int, CellState> previewStates = new Dictionary<Vector2Int, CellState>();
+
+        foreach (Vector2Int offset in shape.Cells)
+        {
+            int x = originX + offset.x;
+            int y = originY + offset.y;
+            Vector2Int cellPosition = new Vector2Int(x, y);
+
+            previewStates[cellPosition] = GetOppositeState(cells[x, y].State);
+        }
+
+        return previewStates;
     }
 
     private IEnumerator ResolvePlacementAnimation(ClearResult clearResult, Action<int> onComplete)
@@ -448,7 +539,7 @@ public class GridManager : MonoBehaviour
     private CellState GetVirtualCellState(int x, int y, Dictionary<Vector2Int, CellState> newStates)
     {
         Vector2Int cellPosition = new Vector2Int(x, y);
-        return newStates.TryGetValue(cellPosition, out CellState state)
+        return newStates != null && newStates.TryGetValue(cellPosition, out CellState state)
             ? state
             : cells[x, y].State;
     }

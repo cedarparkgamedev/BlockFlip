@@ -9,6 +9,10 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     [SerializeField] private float dropReleaseDuration = 0.12f;
     [SerializeField] private float dropReleaseScale = 0.72f;
 
+    [Header("Preview")]
+    [SerializeField, Min(0f)] private float previewDelay = 1.25f;
+    [SerializeField] private float previewMoveTolerance = 8f;
+
     private BlockShape shape;
     private BlockTray tray;
     private BlockVisual blockVisual;
@@ -19,6 +23,11 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     private Vector2 originalAnchoredPosition;
     private Transform originalParent;
     private GridDropResolver resolver;
+    private Camera dragCamera;
+    private Vector2 lastDragPosition;
+    private float stationaryTime;
+    private bool isDragging;
+    private bool isPreviewVisible;
 
     public BlockShape Shape => shape;
     public BlockVisual Visual => blockVisual;
@@ -53,17 +62,31 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             blockVisual.Build(shape, resolver.GridCellSize);
         }
 
+        dragCamera = eventData.pressEventCamera;
+        lastDragPosition = eventData.position;
+        stationaryTime = 0f;
+        isDragging = true;
+        isPreviewVisible = false;
         SetDraggingPosition(eventData);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if ((eventData.position - lastDragPosition).sqrMagnitude > previewMoveTolerance * previewMoveTolerance)
+        {
+            lastDragPosition = eventData.position;
+            stationaryTime = 0f;
+            ClearPreview();
+        }
+
         SetDraggingPosition(eventData);
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         resolver ??= FindAnyObjectByType<GridDropResolver>();
+        isDragging = false;
+        ClearPreview();
 
         if (resolver != null && resolver.TryPlaceBlock(this, eventData))
         {
@@ -75,6 +98,19 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
             rectTransform.anchoredPosition = originalAnchoredPosition;
             blockVisual.Build(shape, trayTileSize);
         }
+    }
+
+    private void Update()
+    {
+        if (!isDragging || isPreviewVisible || resolver == null)
+            return;
+
+        stationaryTime += Time.deltaTime;
+        if (stationaryTime < previewDelay)
+            return;
+
+        resolver.ShowPreview(this, dragCamera);
+        isPreviewVisible = true;
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -114,6 +150,16 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         hitArea.enabled = true;
         hitArea.raycastTarget = true;
         hitArea.color = Color.clear;
+    }
+
+    private void ClearPreview()
+    {
+        if (resolver != null)
+        {
+            resolver.ClearPreview();
+        }
+
+        isPreviewVisible = false;
     }
 
     private void SetDraggingPosition(PointerEventData eventData)
