@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -129,20 +130,29 @@ public class HomeMenuView : MonoBehaviour
         frameImage.raycastTarget = false;
         GameManager.ApplyShadow(frame.gameObject);
 
-        GridLayoutGroup layout = frame.gameObject.AddComponent<GridLayoutGroup>();
-        layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        layout.constraintCount = 8;
-        layout.spacing = new Vector2(4f, 4f);
-        layout.padding = new RectOffset(10, 10, 10, 10);
-        layout.childAlignment = TextAnchor.MiddleCenter;
+        CanvasGroup previewVisibility = frame.gameObject.AddComponent<CanvasGroup>();
+        previewVisibility.alpha = 0f;
+        previewVisibility.blocksRaycasts = false;
 
-        HomePreviewGridSizer sizer = frame.gameObject.AddComponent<HomePreviewGridSizer>();
-        sizer.Configure(layout, 8);
+        RectTransform board = CreateRect("Board", frame);
+        board.anchorMin = new Vector2(0.5f, 0.5f);
+        board.anchorMax = new Vector2(0.5f, 0.5f);
+        board.pivot = new Vector2(0.5f, 0.5f);
+        board.anchoredPosition = Vector2.zero;
+
+        HomePreviewGridSizer sizer = board.gameObject.AddComponent<HomePreviewGridSizer>();
+        sizer.Configure(frame, 8, previewVisibility);
 
         int[] darkCells = { 2, 5, 10, 13, 14, 16, 19, 20, 25, 27, 38, 40, 42, 44, 46, 47, 50, 51, 52, 60, 61 };
+        RectTransform[] cells = new RectTransform[64];
         for (int i = 0; i < 64; i++)
         {
-            RectTransform cell = CreateRect($"PreviewCell_{i:00}", frame);
+            RectTransform cell = CreateRect($"PreviewCell_{i:00}", board);
+            cell.anchorMin = new Vector2(0.5f, 0.5f);
+            cell.anchorMax = new Vector2(0.5f, 0.5f);
+            cell.pivot = new Vector2(0.5f, 0.5f);
+            cells[i] = cell;
+
             Image cellImage = cell.gameObject.AddComponent<Image>();
             cellImage.sprite = GetRoundedSprite();
             cellImage.type = Image.Type.Sliced;
@@ -151,6 +161,9 @@ public class HomeMenuView : MonoBehaviour
                 : new Color(1f, 0.985f, 0.955f, 0.9f);
             cellImage.raycastTarget = false;
         }
+
+        sizer.SetCells(cells);
+        sizer.ResizeNow(true);
     }
 
     private Button CreateModeButton(Transform parent, string name, string label, Vector2 anchorMin, Vector2 anchorMax, bool primary, UnityEngine.Events.UnityAction onClick)
@@ -423,37 +436,201 @@ public class HomeMenuView : MonoBehaviour
 
 public class HomePreviewGridSizer : MonoBehaviour
 {
-    private GridLayoutGroup layout;
+    private const float Spacing = 4f;
+    private const float FramePadding = 10f;
+
     private RectTransform rectTransform;
+    private RectTransform frameRect;
+    private RectTransform revealRect;
+    private CanvasGroup revealGroup;
+    private RectTransform[] cells;
     private int columns = 8;
     private Vector2 lastSize;
+    private Vector2 revealBasePosition;
+    private bool hasRevealed;
+    private Coroutine revealCoroutine;
 
-    public void Configure(GridLayoutGroup targetLayout, int columnCount)
+    public void Configure(RectTransform targetFrame, int columnCount, CanvasGroup visibilityGroup)
     {
-        layout = targetLayout;
         rectTransform = transform as RectTransform;
+        frameRect = targetFrame;
+        revealGroup = visibilityGroup;
+        revealRect = visibilityGroup != null ? visibilityGroup.transform as RectTransform : null;
+        revealBasePosition = revealRect != null ? revealRect.anchoredPosition : Vector2.zero;
         columns = Mathf.Max(1, columnCount);
-        ResizeCells();
+        ResizeNow(true);
+    }
+
+    public void SetCells(RectTransform[] targetCells)
+    {
+        cells = targetCells;
+        ResizeNow(true);
+
+        if (revealGroup != null)
+        {
+            revealGroup.alpha = 0f;
+        }
+
+        if (revealRect != null)
+        {
+            revealRect.anchoredPosition = revealBasePosition + new Vector2(0f, -28f);
+        }
+
+        if (revealCoroutine != null)
+        {
+            StopCoroutine(revealCoroutine);
+        }
+
+        revealCoroutine = StartCoroutine(RevealAfterStableLayout());
     }
 
     private void LateUpdate()
     {
-        ResizeCells();
+        if (hasRevealed)
+        {
+            ResizeNow(false);
+        }
     }
 
-    private void ResizeCells()
+    private IEnumerator RevealAfterStableLayout()
     {
-        if (layout == null || rectTransform == null)
-            return;
+        hasRevealed = false;
 
-        Vector2 size = rectTransform.rect.size;
-        if (size == lastSize)
-            return;
+        Vector2 previousSize = new Vector2(-1f, -1f);
+        int stableFrameCount = 0;
+
+        for (int i = 0; i < 12 && stableFrameCount < 2; i++)
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            bool resized = ResizeNow(true);
+            Vector2 currentSize = lastSize;
+
+            if (resized && Approximately(currentSize, previousSize))
+            {
+                stableFrameCount++;
+            }
+            else
+            {
+                stableFrameCount = 0;
+            }
+
+            previousSize = currentSize;
+        }
+
+        ResizeNow(true);
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+
+        if (revealGroup != null && revealRect != null)
+        {
+            yield return PlayRevealAnimation();
+        }
+        else if (revealGroup != null)
+        {
+            revealGroup.alpha = 1f;
+        }
+
+        hasRevealed = true;
+        revealCoroutine = null;
+    }
+
+    private IEnumerator PlayRevealAnimation()
+    {
+        const float duration = 0.24f;
+        Vector2 startPosition = revealBasePosition + new Vector2(0f, -28f);
+        float elapsed = 0f;
+
+        revealGroup.alpha = 0f;
+        revealRect.anchoredPosition = startPosition;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = Mathf.SmoothStep(0f, 1f, t);
+
+            revealGroup.alpha = eased;
+            revealRect.anchoredPosition = Vector2.Lerp(startPosition, revealBasePosition, eased);
+            yield return null;
+        }
+
+        revealGroup.alpha = 1f;
+        revealRect.anchoredPosition = revealBasePosition;
+    }
+
+    public bool ResizeNow(bool force)
+    {
+        if (rectTransform == null)
+            return false;
+
+        Vector2 size = ResolveCurrentSize();
+        if (!force && size == lastSize)
+            return hasRevealed;
 
         lastSize = size;
-        float availableWidth = size.x - layout.padding.left - layout.padding.right - layout.spacing.x * (columns - 1);
-        float availableHeight = size.y - layout.padding.top - layout.padding.bottom - layout.spacing.y * (columns - 1);
-        float cellSize = Mathf.Floor(Mathf.Min(availableWidth, availableHeight) / columns);
-        layout.cellSize = Vector2.one * Mathf.Max(1f, cellSize);
+        float boardSize = Mathf.Floor(Mathf.Min(size.x, size.y));
+        if (boardSize <= 0f)
+            return false;
+
+        rectTransform.sizeDelta = Vector2.one * boardSize;
+
+        if (cells == null || cells.Length == 0)
+            return false;
+
+        float cellSize = Mathf.Floor((boardSize - Spacing * (columns - 1)) / columns);
+        if (cellSize <= 0f)
+            return false;
+
+        float gridSize = cellSize * columns + Spacing * (columns - 1);
+        rectTransform.sizeDelta = Vector2.one * gridSize;
+        float start = -gridSize * 0.5f + cellSize * 0.5f;
+
+        for (int i = 0; i < cells.Length; i++)
+        {
+            RectTransform cell = cells[i];
+            if (cell == null)
+                continue;
+
+            int x = i % columns;
+            int y = i / columns;
+            cell.sizeDelta = Vector2.one * cellSize;
+            cell.anchoredPosition = new Vector2(
+                start + x * (cellSize + Spacing),
+                -start - y * (cellSize + Spacing)
+            );
+        }
+
+        if (force)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+        }
+
+        return true;
+    }
+
+    private Vector2 ResolveCurrentSize()
+    {
+        RectTransform sourceRect = frameRect != null ? frameRect : rectTransform;
+        Vector2 size = sourceRect.rect.size;
+        if (size.x > 0f && size.y > 0f)
+            return size - Vector2.one * (FramePadding * 2f);
+
+        if (sourceRect.parent is RectTransform parent)
+        {
+            Vector2 parentSize = parent.rect.size;
+            Vector2 resolvedSize = new Vector2(
+                parentSize.x * (sourceRect.anchorMax.x - sourceRect.anchorMin.x) + sourceRect.sizeDelta.x,
+                parentSize.y * (sourceRect.anchorMax.y - sourceRect.anchorMin.y) + sourceRect.sizeDelta.y
+            );
+            return resolvedSize - Vector2.one * (FramePadding * 2f);
+        }
+
+        return size;
+    }
+
+    private static bool Approximately(Vector2 a, Vector2 b)
+    {
+        return Mathf.Abs(a.x - b.x) < 0.5f && Mathf.Abs(a.y - b.y) < 0.5f;
     }
 }

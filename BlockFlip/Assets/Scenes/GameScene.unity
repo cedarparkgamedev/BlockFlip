@@ -519,7 +519,7 @@ MonoBehaviour:
   gameOverMenuPrefab: {fileID: 100004, guid: d8d3f1b0bd77406e8df95dd67ed2cb55, type: 3}
   bestScorePrefsKey: BestScore
   shadowEffectColor: {r: 0, g: 0, b: 0, a: 0.3}
-  shadowEffectDistance: {x: 10, y: -10}
+  shadowEffectDistance: {x: 1, y: -10}
   shadowUseGraphicAlpha: 1
 --- !u!1 &393741326
 GameObject:
