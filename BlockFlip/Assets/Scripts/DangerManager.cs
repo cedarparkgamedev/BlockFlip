@@ -8,6 +8,7 @@ public class DangerManager : MonoBehaviour
 
     private int danger;
     private bool gameOverNotified = false;
+    private RectTransform fillRect;
 
     public bool IsGameOver => danger >= maxDanger;
 
@@ -19,12 +20,13 @@ public class DangerManager : MonoBehaviour
     public void SetFillImage(Image image)
     {
         fillImage = image;
+        fillRect = fillImage != null
+            ? fillImage.rectTransform
+            : null;
 
         if (fillImage != null)
         {
-            fillImage.type = Image.Type.Filled;
-            fillImage.fillMethod = Image.FillMethod.Horizontal;
-            fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+            fillImage.type = Image.Type.Simple;
         }
 
         UpdateUI();
@@ -41,24 +43,33 @@ public class DangerManager : MonoBehaviour
             danger++;
         }
 
-        Debug.Log("[OnMoveResolved] danger "+danger+" maxDanger : "+maxDanger);
-
         UpdateUI();
     }
 
     private void UpdateUI()
     {
+        float dangerRatio = maxDanger > 0
+            ? Mathf.Clamp01(danger / (float)maxDanger)
+            : 1f;
+
         if (fillImage != null)
         {
-            fillImage.fillAmount = danger / (float)maxDanger;
-            Debug.Log("New Fill Amount : "+fillImage.fillAmount);
+            fillImage.fillAmount = dangerRatio;
+        }
+
+        if (fillRect != null)
+        {
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = new Vector2(dangerRatio, 1f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            fillRect.gameObject.SetActive(dangerRatio > 0f);
         }
 
         if (IsGameOver && !gameOverNotified)
         {
-            Debug.Log("Game Over!");
             gameOverNotified = true;
             GameManager.Instance?.ShowGameOver();
-        }        
+        }
     }
 }

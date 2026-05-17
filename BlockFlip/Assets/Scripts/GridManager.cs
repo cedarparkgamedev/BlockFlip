@@ -271,10 +271,27 @@ public class GridManager : MonoBehaviour
         barRect.offsetMax = Vector2.zero;
 
         Image barImage = barObject.GetComponent<Image>();
-        barImage.color = new Color(0.08f, 0.075f, 0.07f, 0.82f);
+        barImage.color = new Color(0.08f, 0.075f, 0.07f, 0.16f);
         barImage.raycastTarget = false;
         AddShadow(barObject, new Vector2(0f, -3f), 0.18f);
-        return barImage;
+
+        Transform fillTransform = barObject.transform.Find("Danger_Fill");
+        GameObject fillObject = fillTransform != null
+            ? fillTransform.gameObject
+            : new GameObject("Danger_Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+
+        fillObject.transform.SetParent(barObject.transform, false);
+        RectTransform fillRect = fillObject.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.zero;
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
+
+        Image fillImage = fillObject.GetComponent<Image>();
+        fillImage.color = new Color(0.08f, 0.075f, 0.07f, 0.86f);
+        fillImage.raycastTarget = false;
+
+        return fillImage;
     }
 
     private void ConfigureTray()

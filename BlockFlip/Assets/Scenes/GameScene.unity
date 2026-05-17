@@ -323,7 +323,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38c22afca9ff34540a5bef62efba65dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DangerManager
-  maxDanger: 2
+  maxDanger: 10
   fillImage: {fileID: 0}
 --- !u!4 &217199993
 Transform:
