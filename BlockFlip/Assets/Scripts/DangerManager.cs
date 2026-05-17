@@ -9,6 +9,7 @@ public class DangerManager : MonoBehaviour
     private int danger;
     private bool gameOverNotified = false;
     private RectTransform fillRect;
+    private DangerWarningEffects warningEffects;
 
     public bool IsGameOver => danger >= maxDanger;
 
@@ -29,6 +30,13 @@ public class DangerManager : MonoBehaviour
             fillImage.type = Image.Type.Simple;
         }
 
+        warningEffects = FindAnyObjectByType<DangerWarningEffects>();
+        if (warningEffects == null)
+        {
+            warningEffects = new GameObject("DangerWarningEffects").AddComponent<DangerWarningEffects>();
+        }
+
+        warningEffects.Configure(fillImage);
         UpdateUI();
     }
 
@@ -64,6 +72,11 @@ public class DangerManager : MonoBehaviour
             fillRect.offsetMin = Vector2.zero;
             fillRect.offsetMax = Vector2.zero;
             fillRect.gameObject.SetActive(dangerRatio > 0f);
+        }
+
+        if (warningEffects != null)
+        {
+            warningEffects.SetDangerRatio(dangerRatio);
         }
 
         if (IsGameOver && !gameOverNotified)
