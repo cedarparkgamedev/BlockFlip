@@ -5,6 +5,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 {
     private BlockShape shape;
     private BlockTray tray;
+    private BlockVisual blockVisual;
     private RectTransform rectTransform;
     private Canvas canvas;
 
@@ -12,6 +13,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     private Transform originalParent;
 
     public BlockShape Shape => shape;
+    public BlockVisual Visual => blockVisual;
 
     public void Initialize(BlockShape blockShape, BlockTray ownerTray)
     {
@@ -19,12 +21,13 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
         tray = ownerTray;
 
         rectTransform = GetComponent<RectTransform>();
+        blockVisual = GetComponent<BlockVisual>();
         canvas = GetComponentInParent<Canvas>();
 
         // TODO:
         // 여기서 shape.Cells를 기반으로 작은 UI 타일들을 생성해서 블록 모양 표시
 
-        GetComponent<BlockVisual>().Build(blockShape);
+        blockVisual.Build(blockShape);
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -44,7 +47,7 @@ public class DraggableBlock : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
     {
         GridDropResolver resolver = FindObjectOfType<GridDropResolver>();
 
-        if (resolver != null && resolver.TryPlaceBlock(this, eventData.position))
+        if (resolver != null && resolver.TryPlaceBlock(this, eventData))
         {
             tray.ReplaceBlock(this);
         }
