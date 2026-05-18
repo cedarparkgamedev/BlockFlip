@@ -11,9 +11,10 @@ public class SettingsMenuRuntimeBuilder : MonoBehaviour
 
     private void Awake()
     {
-        if (transform.Find("Panel") != null)
+        if (transform.Find("SafeAreaRoot") != null)
             return;
 
+        ClearGeneratedChildren();
         Build();
     }
 
@@ -34,10 +35,12 @@ public class SettingsMenuRuntimeBuilder : MonoBehaviour
         overlay.color = new Color(1f, 0.985f, 0.955f, 0.96f);
         overlay.raycastTarget = true;
 
-        CreateBackButton(transform);
-        CreateLabel("Title", transform, "S E T T I N G S", new Vector2(0.18f, 0.905f), new Vector2(0.82f, 0.985f), Vector2.zero, Vector2.zero, 42f, 12f, TextAlignmentOptions.Center, textColor);
+        Transform safeAreaRoot = CreateSafeAreaRoot(transform);
 
-        GameObject panel = CreateRectObject("Panel", transform, new Vector2(0.08f, 0.175f), new Vector2(0.92f, 0.855f), Vector2.zero, Vector2.zero);
+        CreateBackButton(safeAreaRoot);
+        CreateLabel("Title", safeAreaRoot, "S E T T I N G S", new Vector2(0.18f, 0.905f), new Vector2(0.82f, 0.985f), Vector2.zero, Vector2.zero, 42f, 12f, TextAlignmentOptions.Center, textColor);
+
+        GameObject panel = CreateRectObject("Panel", safeAreaRoot, new Vector2(0.08f, 0.175f), new Vector2(0.92f, 0.855f), Vector2.zero, Vector2.zero);
         Image panelImage = panel.AddComponent<Image>();
         panelImage.sprite = GetRoundedSprite();
         panelImage.type = Image.Type.Sliced;
@@ -59,9 +62,9 @@ public class SettingsMenuRuntimeBuilder : MonoBehaviour
         CreateLanguageRow(panel.transform);
         CreatePanelButton(panel.transform, "ResetTutorialButton", "R E S E T  T U T O R I A L", new Vector2(0.065f, 0.03f), new Vector2(0.935f, 0.095f), false);
 
-        CreateFooterButton(transform, "PrivacyButton", "◇", "P R I V A C Y", new Vector2(0.08f, 0.095f), new Vector2(0.49f, 0.145f));
-        CreateFooterButton(transform, "CreditsButton", "ⓘ", "C R E D I T S", new Vector2(0.51f, 0.095f), new Vector2(0.92f, 0.145f));
-        CreatePanelButton(transform, "DoneButton", "D O N E", new Vector2(0.08f, 0.025f), new Vector2(0.92f, 0.075f), true);
+        CreateFooterButton(safeAreaRoot, "PrivacyButton", "◇", "P R I V A C Y", new Vector2(0.08f, 0.095f), new Vector2(0.49f, 0.145f));
+        CreateFooterButton(safeAreaRoot, "CreditsButton", "ⓘ", "C R E D I T S", new Vector2(0.51f, 0.095f), new Vector2(0.92f, 0.145f));
+        CreatePanelButton(safeAreaRoot, "DoneButton", "D O N E", new Vector2(0.08f, 0.025f), new Vector2(0.92f, 0.075f), true);
     }
 
     private void CreateSectionHeader(Transform parent, string name, string title, float y)
@@ -179,6 +182,21 @@ public class SettingsMenuRuntimeBuilder : MonoBehaviour
         Image image = line.AddComponent<Image>();
         image.color = dividerColor;
         image.raycastTarget = false;
+    }
+
+    private void ClearGeneratedChildren()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(transform.GetChild(i).gameObject);
+        }
+    }
+
+    private static Transform CreateSafeAreaRoot(Transform parent)
+    {
+        GameObject root = CreateRectObject("SafeAreaRoot", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        root.AddComponent<SafeAreaFitter>();
+        return root.transform;
     }
 
     private static GameObject CreateRectObject(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 sizeDelta, Vector2 anchoredPosition)

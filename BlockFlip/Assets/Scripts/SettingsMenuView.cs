@@ -53,18 +53,18 @@ public class SettingsMenuView : MonoBehaviour
 
     private void ResolveReferences()
     {
-        backButton ??= FindButton("BackButton");
-        doneButton ??= FindButton("DoneButton");
-        languageButton ??= FindButton("LanguageButton");
-        resetTutorialButton ??= FindButton("ResetTutorialButton");
-        privacyButton ??= FindButton("PrivacyButton");
-        creditsButton ??= FindButton("CreditsButton");
-        musicToggle ??= FindToggle("MusicToggle");
-        soundEffectsToggle ??= FindToggle("SoundEffectsToggle");
-        hapticsToggle ??= FindToggle("HapticsToggle");
-        placementPreviewToggle ??= FindToggle("PlacementPreviewToggle");
-        confirmRestartToggle ??= FindToggle("ConfirmRestartToggle");
-        reduceMotionToggle ??= FindToggle("ReduceMotionToggle");
+        backButton = FindButton("BackButton");
+        doneButton = FindButton("DoneButton");
+        languageButton = FindButton("LanguageButton");
+        resetTutorialButton = FindButton("ResetTutorialButton");
+        privacyButton = FindButton("PrivacyButton");
+        creditsButton = FindButton("CreditsButton");
+        musicToggle = FindToggle("MusicToggle");
+        soundEffectsToggle = FindToggle("SoundEffectsToggle");
+        hapticsToggle = FindToggle("HapticsToggle");
+        placementPreviewToggle = FindToggle("PlacementPreviewToggle");
+        confirmRestartToggle = FindToggle("ConfirmRestartToggle");
+        reduceMotionToggle = FindToggle("ReduceMotionToggle");
     }
 
     public void Show()

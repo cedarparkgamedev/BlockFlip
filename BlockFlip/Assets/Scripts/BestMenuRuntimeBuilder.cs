@@ -11,9 +11,10 @@ public class BestMenuRuntimeBuilder : MonoBehaviour
 
     private void Awake()
     {
-        if (transform.Find("StatsPanel") != null)
+        if (transform.Find("SafeAreaRoot") != null)
             return;
 
+        ClearGeneratedChildren();
         Build();
     }
 
@@ -34,10 +35,12 @@ public class BestMenuRuntimeBuilder : MonoBehaviour
         overlay.color = new Color(1f, 0.985f, 0.955f, 0.96f);
         overlay.raycastTarget = true;
 
-        CreateBackButton(transform);
-        CreateLabel("Title", transform, "B E S T", new Vector2(0.25f, 0.92f), new Vector2(0.75f, 0.985f), Vector2.zero, Vector2.zero, 39f, 14f, TextAlignmentOptions.Center, textColor);
+        Transform safeAreaRoot = CreateSafeAreaRoot(transform);
 
-        GameObject statsPanel = CreatePanel("StatsPanel", transform, new Vector2(0.06f, 0.33f), new Vector2(0.94f, 0.86f));
+        CreateBackButton(safeAreaRoot);
+        CreateLabel("Title", safeAreaRoot, "B E S T", new Vector2(0.25f, 0.92f), new Vector2(0.75f, 0.985f), Vector2.zero, Vector2.zero, 39f, 14f, TextAlignmentOptions.Center, textColor);
+
+        GameObject statsPanel = CreatePanel("StatsPanel", safeAreaRoot, new Vector2(0.06f, 0.33f), new Vector2(0.94f, 0.86f));
         CreateModeHeader(statsPanel.transform, "ClassicHeader", "C L A S S I C", true, new Vector2(0.05f, 0.86f), new Vector2(0.95f, 0.965f));
         CreateStatRow(statsPanel.transform, "ClassicBestScoreRow", "Best Score", "ClassicBestScoreValue", "0", 0.775f);
         CreateStatRow(statsPanel.transform, "ClassicLinesRow", "Lines Cleared", "ClassicLinesValue", "0", 0.675f);
@@ -49,10 +52,10 @@ public class BestMenuRuntimeBuilder : MonoBehaviour
         CreateStatRow(statsPanel.transform, "ZenMaxComboRow", "Max Combo", "ZenMaxComboValue", "x0", 0.08f);
         CreateStatRow(statsPanel.transform, "ZenFlowStreakRow", "Best Flow Streak", "ZenFlowStreakValue", "0", -0.015f);
 
-        GameObject achievementsPanel = CreatePanel("RecentAchievementsPanel", transform, new Vector2(0.06f, 0.125f), new Vector2(0.94f, 0.305f));
+        GameObject achievementsPanel = CreatePanel("RecentAchievementsPanel", safeAreaRoot, new Vector2(0.06f, 0.125f), new Vector2(0.94f, 0.305f));
         CreateAchievements(achievementsPanel.transform);
 
-        CreateDoneButton(transform);
+        CreateDoneButton(safeAreaRoot);
     }
 
     private GameObject CreatePanel(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax)
@@ -164,6 +167,21 @@ public class BestMenuRuntimeBuilder : MonoBehaviour
         Image image = rule.AddComponent<Image>();
         image.color = dividerColor;
         image.raycastTarget = false;
+    }
+
+    private void ClearGeneratedChildren()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(transform.GetChild(i).gameObject);
+        }
+    }
+
+    private static Transform CreateSafeAreaRoot(Transform parent)
+    {
+        GameObject root = CreateRectObject("SafeAreaRoot", parent, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        root.AddComponent<SafeAreaFitter>();
+        return root.transform;
     }
 
     private static GameObject CreateRectObject(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 sizeDelta, Vector2 anchoredPosition)

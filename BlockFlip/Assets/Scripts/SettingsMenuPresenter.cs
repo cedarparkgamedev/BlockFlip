@@ -12,6 +12,7 @@ public static class SettingsMenuPresenter
         SettingsMenuView existing = parent.Find("SettingsMenu")?.GetComponent<SettingsMenuView>();
         if (existing != null)
         {
+            EnsureRuntimeBuilder(existing);
             existing.Initialize(null);
             existing.Show();
             return existing;
@@ -26,9 +27,21 @@ public static class SettingsMenuPresenter
 
         SettingsMenuView view = Object.Instantiate(prefab, parent, false);
         view.name = "SettingsMenu";
+        EnsureRuntimeBuilder(view);
         GameManager.ApplyShadowStyleToHierarchy(view.gameObject);
         view.Initialize(null);
         view.Show();
         return view;
+    }
+
+    private static void EnsureRuntimeBuilder(SettingsMenuView view)
+    {
+        if (view == null)
+            return;
+
+        if (view.GetComponent<SettingsMenuRuntimeBuilder>() == null)
+        {
+            view.gameObject.AddComponent<SettingsMenuRuntimeBuilder>();
+        }
     }
 }
