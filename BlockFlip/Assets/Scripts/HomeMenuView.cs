@@ -327,8 +327,11 @@ public class HomeMenuView : MonoBehaviour
 
     private void ShowBestScore()
     {
-        int best = PlayerPrefs.GetInt(BestScorePrefsKey, 0);
-        ShowModal("BEST", best.ToString("N0"));
+        Canvas canvas = FindAnyObjectByType<Canvas>();
+        if (canvas != null)
+        {
+            BestMenuPresenter.Show(canvas.transform);
+        }
     }
 
     private void ShowModal(string title, string body)
